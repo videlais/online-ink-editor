@@ -245,6 +245,26 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handleLoadInk = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.ink';
+    input.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const fileContent = event.target?.result as string;
+          setContent(fileContent);
+          // Auto-compile will happen via useEffect
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
     alert('Content copied to clipboard!');
@@ -278,6 +298,7 @@ function App() {
         onSave={handleSave}
         onExport={handleExport}
         onSaveAsInk={handleSaveAsInk}
+        onLoadInk={handleLoadInk}
         onCopy={handleCopy}
         onPaste={handlePaste}
         onShowStats={handleShowStats}

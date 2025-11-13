@@ -6,6 +6,7 @@ interface MenuBarProps {
   onSave: () => void;
   onExport: () => void;
   onSaveAsInk: () => void;
+  onLoadInk: () => void;
   onCopy: () => void;
   onPaste: () => void;
   onShowStats: () => void;
@@ -25,6 +26,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onSave,
   onExport,
   onSaveAsInk,
+  onLoadInk,
   onCopy,
   onPaste,
   onShowStats,
@@ -77,6 +79,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         {openMenu.file && (
           <div className="dropdown">
             <button onClick={() => handleAction(onNew)}>New Project</button>
+            <button onClick={() => handleAction(onLoadInk)}>Load Ink File</button>
             <button onClick={() => handleAction(onSave)}>Save Project</button>
             <button onClick={() => handleAction(onSaveAsInk)}>Save as Ink</button>
             <button onClick={() => handleAction(onExport)}>Export as JSON</button>
