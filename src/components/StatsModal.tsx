@@ -9,12 +9,44 @@ interface StatsModalProps {
 }
 
 export const StatsModal: React.FC<StatsModalProps> = ({ stats, variables, onClose }) => {
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const closeButtonRef = React.useRef<HTMLButtonElement>(null);
+
+  React.useEffect(() => {
+    // Focus the close button when modal opens
+    closeButtonRef.current?.focus();
+    
+    // Handle Escape key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div 
+        className="modal-content" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-labelledby="modal-title"
+        aria-modal="true"
+        ref={modalRef}
+      >
         <div className="modal-header">
-          <h2>Story Statistics</h2>
-          <button onClick={onClose} className="close-button">×</button>
+          <h2 id="modal-title">Story Statistics</h2>
+          <button 
+            onClick={onClose} 
+            className="close-button"
+            aria-label="Close statistics modal"
+            ref={closeButtonRef}
+          >
+            ×
+          </button>
         </div>
         
         <div className="modal-body">

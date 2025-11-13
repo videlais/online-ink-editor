@@ -111,13 +111,13 @@
 }
 
 .error-message {
-  color: #f48771;
+  color: #ffcccc;
   font-size: 0.857em;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   margin: 4px 0;
   padding: 4px 8px;
-  background-color: rgba(244, 135, 113, 0.1);
-  border-left: 2px solid #f48771;
+  background-color: #4a1a1a;
+  border-left: 2px solid #ff6666;
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;

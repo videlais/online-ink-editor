@@ -29,14 +29,14 @@ export const StoryPane: React.FC<StoryPaneProps> = ({
       </div>
       
       <div className="story-content">
-        <div className="story-output">
+        <div className="story-output" aria-live="polite" aria-label="Story output">
           {!isRunning && output.length === 0 && (
             <p className="story-placeholder">
               Compile your Ink story to see the output here...
             </p>
           )}
           {output.map((line, index) => (
-            <p key={index} className="story-line">
+            <p key={`story-line-${index}`} className="story-line">
               {line}
             </p>
           ))}

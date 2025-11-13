@@ -28,6 +28,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ value, onChange }) => {
           highlightActiveLine: true,
           foldGutter: true,
         }}
+        aria-label="Ink story editor - write your interactive fiction here"
       />
     </div>
   );

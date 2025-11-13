@@ -294,7 +294,8 @@ function App() {
 
   return (
     <div className="app">
-      <MenuBar
+      <header>
+        <MenuBar
         onNew={handleNew}
         onSave={handleSave}
         onExport={handleExport}
@@ -306,8 +307,9 @@ function App() {
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
       />
+      </header>
       
-      <div className="main-content" style={{ fontSize: `${zoomLevel}%` }}>
+      <main className="main-content" style={{ fontSize: `${zoomLevel}%` }} role="main">
         <ResizableSplitter
           defaultLeftWidth={50}
           minLeftWidth={25}
@@ -330,7 +332,7 @@ function App() {
             </div>
           }
         />
-      </div>
+      </main>
       
       {showStats && (
         <StatsModal

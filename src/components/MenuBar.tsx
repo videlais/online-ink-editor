@@ -73,51 +73,107 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   return (
     <div className="menu-bar" ref={menuRef}>
       <div className="menu-item">
-        <button onClick={() => toggleMenu('file')} className="menu-button">
+        <button 
+          onClick={() => toggleMenu('file')} 
+          className="menu-button"
+          aria-expanded={openMenu.file}
+          aria-haspopup="true"
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && openMenu.file) {
+              e.preventDefault();
+              const firstItem = menuRef.current?.querySelector('.dropdown button');
+              (firstItem as HTMLElement)?.focus();
+            } else if (e.key === 'Escape') {
+              closeMenus();
+            }
+          }}
+        >
           File
         </button>
         {openMenu.file && (
-          <div className="dropdown">
-            <button onClick={() => handleAction(onNew)}>New Project</button>
-            <button onClick={() => handleAction(onLoadInk)}>Load Ink File</button>
-            <button onClick={() => handleAction(onSave)}>Save Project</button>
-            <button onClick={() => handleAction(onSaveAsInk)}>Save as Ink</button>
-            <button onClick={() => handleAction(onExport)}>Export as JSON</button>
+          <div className="dropdown" role="menu" aria-label="File menu">
+            <button onClick={() => handleAction(onNew)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>New Project</button>
+            <button onClick={() => handleAction(onLoadInk)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Load Ink File</button>
+            <button onClick={() => handleAction(onSave)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Save Project</button>
+            <button onClick={() => handleAction(onSaveAsInk)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Save as Ink</button>
+            <button onClick={() => handleAction(onExport)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Export as JSON</button>
           </div>
         )}
       </div>
 
       <div className="menu-item">
-        <button onClick={() => toggleMenu('edit')} className="menu-button">
+        <button 
+          onClick={() => toggleMenu('edit')} 
+          className="menu-button"
+          aria-expanded={openMenu.edit}
+          aria-haspopup="true"
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && openMenu.edit) {
+              e.preventDefault();
+              const firstItem = menuRef.current?.querySelector('.dropdown button');
+              (firstItem as HTMLElement)?.focus();
+            } else if (e.key === 'Escape') {
+              closeMenus();
+            }
+          }}
+        >
           Edit
         </button>
         {openMenu.edit && (
-          <div className="dropdown">
-            <button onClick={() => handleAction(onCopy)}>Copy</button>
-            <button onClick={() => handleAction(onPaste)}>Paste</button>
+          <div className="dropdown" role="menu" aria-label="Edit menu">
+            <button onClick={() => handleAction(onCopy)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Copy</button>
+            <button onClick={() => handleAction(onPaste)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Paste</button>
           </div>
         )}
       </div>
 
       <div className="menu-item">
-        <button onClick={() => toggleMenu('story')} className="menu-button">
+        <button 
+          onClick={() => toggleMenu('story')} 
+          className="menu-button"
+          aria-expanded={openMenu.story}
+          aria-haspopup="true"
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && openMenu.story) {
+              e.preventDefault();
+              const firstItem = menuRef.current?.querySelector('.dropdown button');
+              (firstItem as HTMLElement)?.focus();
+            } else if (e.key === 'Escape') {
+              closeMenus();
+            }
+          }}
+        >
           Story
         </button>
         {openMenu.story && (
-          <div className="dropdown">
-            <button onClick={() => handleAction(onShowStats)}>Story Statistics</button>
+          <div className="dropdown" role="menu" aria-label="Story menu">
+            <button onClick={() => handleAction(onShowStats)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Story Statistics</button>
           </div>
         )}
       </div>
 
       <div className="menu-item">
-        <button onClick={() => toggleMenu('view')} className="menu-button">
+        <button 
+          onClick={() => toggleMenu('view')} 
+          className="menu-button"
+          aria-expanded={openMenu.view}
+          aria-haspopup="true"
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && openMenu.view) {
+              e.preventDefault();
+              const firstItem = menuRef.current?.querySelector('.dropdown button');
+              (firstItem as HTMLElement)?.focus();
+            } else if (e.key === 'Escape') {
+              closeMenus();
+            }
+          }}
+        >
           View
         </button>
         {openMenu.view && (
-          <div className="dropdown">
-            <button onClick={() => handleAction(onZoomIn)}>Zoom In</button>
-            <button onClick={() => handleAction(onZoomOut)}>Zoom Out</button>
+          <div className="dropdown" role="menu" aria-label="View menu">
+            <button onClick={() => handleAction(onZoomIn)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Zoom In</button>
+            <button onClick={() => handleAction(onZoomOut)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Zoom Out</button>
           </div>
         )}
       </div>
