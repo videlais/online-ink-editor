@@ -5,7 +5,7 @@ async function setEditorContent(page: Page, content: string) {
   await page.evaluate((text) => {
     const editorElement = document.querySelector('.cm-content');
     if (editorElement) {
-      const view = (editorElement as any).cmView?.view;
+      const view = (editorElement as { cmView?: { view?: unknown } }).cmView?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }

@@ -11,28 +11,65 @@ interface StatsModalProps {
 export const StatsModal: React.FC<StatsModalProps> = ({ stats, variables, onClose }) => {
   const modalRef = React.useRef<HTMLDivElement>(null);
   const closeButtonRef = React.useRef<HTMLButtonElement>(null);
+  const lastFocusedElement = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
+    // Store the currently focused element
+    lastFocusedElement.current = document.activeElement as HTMLElement;
+    
     // Focus the close button when modal opens
     closeButtonRef.current?.focus();
     
-    // Handle Escape key
+    // Handle Escape key and focus trap
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+      
+      // Focus trap
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
       }
     };
     
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      // Return focus to the element that opened the modal
+      if (lastFocusedElement.current) {
+        lastFocusedElement.current.focus();
+      }
+    };
   }, [onClose]);
 
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div 
+      className="modal-overlay" 
+      onMouseDown={handleOverlayClick}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+    >
       <div 
         className="modal-content" 
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
         aria-labelledby="modal-title"
         aria-modal="true"
         ref={modalRef}
@@ -61,7 +98,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ stats, variables, onClos
             {stats.knots.length > 0 && (
               <ul className="stat-list">
                 {stats.knots.map((knot, index) => (
-                  <li key={index}>{knot}</li>
+                  <li key={`knot-${knot}-${index}`}>{knot}</li>
                 ))}
               </ul>
             )}
@@ -70,7 +107,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ stats, variables, onClos
             {stats.stitches.length > 0 && (
               <ul className="stat-list">
                 {stats.stitches.map((stitch, index) => (
-                  <li key={index}>{stitch}</li>
+                  <li key={`stitch-${stitch}-${index}`}>{stitch}</li>
                 ))}
               </ul>
             )}
@@ -82,7 +119,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ stats, variables, onClos
             {stats.variables.length > 0 && (
               <ul className="stat-list">
                 {stats.variables.map((varName, index) => (
-                  <li key={index}>{varName}</li>
+                  <li key={`variable-${varName}-${index}`}>{varName}</li>
                 ))}
               </ul>
             )}

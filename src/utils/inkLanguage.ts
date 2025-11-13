@@ -3,7 +3,8 @@ import type { StreamParser } from '@codemirror/language';
 
 // Define Ink syntax highlighting
 const inkParser: StreamParser<unknown> = {
-  token(stream, state) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  token(stream, _state) {
     // Comments
     if (stream.match(/^\/\/.*/)) {
       return 'comment';
@@ -15,7 +16,7 @@ const inkParser: StreamParser<unknown> = {
       return 'comment';
     }
     
-    // TODO comments
+    // Highlight special comments with emphasis styling
     if (stream.match(/^TODO:/)) {
       return 'emphasis';
     }

@@ -5,7 +5,7 @@ async function setEditorContent(page: Page, content: string) {
   await page.evaluate((text) => {
     const editorElement = document.querySelector('.cm-content');
     if (editorElement) {
-      const view = (editorElement as any).cmView?.view;
+      const view = (editorElement as { cmView?: { view?: unknown } }).cmView?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }
@@ -31,8 +31,6 @@ test.describe('Save and Load Workflows', () => {
     // Given: User has entered custom content
     const customStory = 'My custom Ink story for testing save functionality.';
     await setEditorContent(page, customStory);
-    
-    const editor = page.locator('.cm-content');
     
     // When: User clicks File > Save Project
     const fileMenu = page.locator('button:has-text("File")').first();
@@ -161,8 +159,6 @@ test.describe('Save and Load Workflows', () => {
     // Given: Initial content is saved
     const initialStory = 'Initial story content.';
     await setEditorContent(page, initialStory);
-    
-    const editor = page.locator('.cm-content');
     
     const fileMenu = page.locator('button:has-text("File")').first();
     await fileMenu.click();

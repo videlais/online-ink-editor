@@ -36,7 +36,7 @@ export const StoryPane: React.FC<StoryPaneProps> = ({
             </p>
           )}
           {output.map((line, index) => (
-            <p key={`story-line-${index}`} className="story-line">
+            <p key={`story-line-${index}-${line.slice(0, 20)}`} className="story-line">
               {line}
             </p>
           ))}
@@ -58,14 +58,16 @@ export const StoryPane: React.FC<StoryPaneProps> = ({
       </div>
       
       {errors.length > 0 && (
-        <div className="story-errors">
+        <section className="story-errors" aria-label="Compilation errors">
           <h4>Errors:</h4>
-          {errors.map((error, index) => (
-            <div key={index} className="error-message">
-              {error}
-            </div>
-          ))}
-        </div>
+          <div aria-live="assertive" aria-atomic="true">
+            {errors.map((error, index) => (
+              <div key={`error-${index}-${error.slice(0, 20)}`} className="error-message" role="alert">
+                {error}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

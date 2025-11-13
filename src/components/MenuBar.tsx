@@ -10,6 +10,7 @@ interface MenuBarProps {
   onCopy: () => void;
   onPaste: () => void;
   onShowStats: () => void;
+  onRestart: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
 }
@@ -30,9 +31,15 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onCopy,
   onPaste,
   onShowStats,
+  onRestart,
   onZoomIn,
   onZoomOut,
 }) => {
+  // Detect platform for keyboard shortcuts display
+  const isMac = navigator.userAgent.toUpperCase().includes('MAC');
+  const modifierKey = isMac ? '⌘' : 'Ctrl';
+  
+  const getShortcut = (key: string) => `${modifierKey}+${key}`;
   const [openMenu, setOpenMenu] = useState<MenuState>({
     file: false,
     edit: false,
@@ -92,11 +99,23 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         </button>
         {openMenu.file && (
           <div className="dropdown" role="menu" aria-label="File menu">
-            <button onClick={() => handleAction(onNew)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>New Project</button>
-            <button onClick={() => handleAction(onLoadInk)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Load Ink File</button>
-            <button onClick={() => handleAction(onSave)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Save Project</button>
+            <button onClick={() => handleAction(onNew)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>New Project</span>
+              <span className="shortcut">{getShortcut('N')}</span>
+            </button>
+            <button onClick={() => handleAction(onLoadInk)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Load Ink File</span>
+              <span className="shortcut">{getShortcut('O')}</span>
+            </button>
+            <button onClick={() => handleAction(onSave)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Save Project</span>
+              <span className="shortcut">{getShortcut('S')}</span>
+            </button>
             <button onClick={() => handleAction(onSaveAsInk)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Save as Ink</button>
-            <button onClick={() => handleAction(onExport)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Export as JSON</button>
+            <button onClick={() => handleAction(onExport)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Export as JSON</span>
+              <span className="shortcut">{getShortcut('E')}</span>
+            </button>
           </div>
         )}
       </div>
@@ -121,8 +140,14 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         </button>
         {openMenu.edit && (
           <div className="dropdown" role="menu" aria-label="Edit menu">
-            <button onClick={() => handleAction(onCopy)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Copy</button>
-            <button onClick={() => handleAction(onPaste)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Paste</button>
+            <button onClick={() => handleAction(onCopy)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Copy</span>
+              <span className="shortcut">{getShortcut('C')}</span>
+            </button>
+            <button onClick={() => handleAction(onPaste)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Paste</span>
+              <span className="shortcut">{getShortcut('V')}</span>
+            </button>
           </div>
         )}
       </div>
@@ -147,7 +172,14 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         </button>
         {openMenu.story && (
           <div className="dropdown" role="menu" aria-label="Story menu">
-            <button onClick={() => handleAction(onShowStats)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Story Statistics</button>
+            <button onClick={() => handleAction(onRestart)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Restart Story</span>
+              <span className="shortcut">{getShortcut('R')}</span>
+            </button>
+            <button onClick={() => handleAction(onShowStats)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Story Statistics</span>
+              <span className="shortcut">{getShortcut('I')}</span>
+            </button>
           </div>
         )}
       </div>
@@ -172,8 +204,14 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         </button>
         {openMenu.view && (
           <div className="dropdown" role="menu" aria-label="View menu">
-            <button onClick={() => handleAction(onZoomIn)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Zoom In</button>
-            <button onClick={() => handleAction(onZoomOut)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>Zoom Out</button>
+            <button onClick={() => handleAction(onZoomIn)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Zoom In</span>
+              <span className="shortcut">{getShortcut('+')}</span>
+            </button>
+            <button onClick={() => handleAction(onZoomOut)} role="menuitem" onKeyDown={(e) => e.key === 'Escape' && closeMenus()}>
+              <span>Zoom Out</span>
+              <span className="shortcut">{getShortcut('-')}</span>
+            </button>
           </div>
         )}
       </div>

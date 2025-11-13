@@ -41,7 +41,7 @@ function App() {
     try {
       while (story.canContinue) {
         const line = story.Continue();
-        if (line && line.trim()) {
+        if (line?.trim()) {
           newOutput.push(line.trim());
         }
       }
@@ -117,26 +117,30 @@ function App() {
         if (compilerObj && typeof compilerObj === 'object' && 'errors' in compilerObj) {
           const errors = (compilerObj as { errors?: unknown[] }).errors;
           if (errors && errors.length > 0) {
-            errors.forEach((err: unknown) => {
+            for (const err of errors) {
               if (typeof err === 'string') {
                 errorMessages.push(err);
               } else if (err && typeof err === 'object' && 'message' in err) {
                 errorMessages.push(String((err as { message: unknown }).message));
               } else if (err && typeof err === 'object' && 'toString' in err) {
-                errorMessages.push(String(err));
+                try {
+                  errorMessages.push((err as { toString(): string }).toString());
+                } catch {
+                  errorMessages.push('Unknown error occurred');
+                }
               }
-            });
+            }
           }
         } else if (compilerObj && typeof compilerObj === 'object' && '_errors' in compilerObj) {
           const errors = (compilerObj as { _errors?: unknown[] })._errors;
           if (errors && errors.length > 0) {
-            errors.forEach((err: unknown) => {
+            for (const err of errors) {
               if (typeof err === 'string') {
                 errorMessages.push(err);
               } else if (err && typeof err === 'object' && 'message' in err) {
                 errorMessages.push(String((err as { message: unknown }).message));
               }
-            });
+            }
           }
         } else if (compileError instanceof Error) {
           // Try to extract from the error itself
@@ -211,9 +215,9 @@ function App() {
     }
   };
 
-  const handleRestart = () => {
+  const handleRestart = useCallback(() => {
     compileAndRun();
-  };
+  }, [compileAndRun]);
 
   const handleNew = () => {
     if (confirm('Create a new project? Any unsaved changes will be lost.')) {
@@ -225,14 +229,14 @@ function App() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     saveToLocalStorage(content);
     alert('Project saved to localStorage!');
-  };
+  }, [content]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     exportAsJSON(content);
-  };
+  }, [content]);
 
   const handleSaveAsInk = () => {
     const blob = new Blob([content], { type: 'text/plain' });
@@ -242,7 +246,7 @@ function App() {
     a.download = `story-${Date.now()}.ink`;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
     URL.revokeObjectURL(url);
   };
 
@@ -254,22 +258,22 @@ function App() {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const fileContent = event.target?.result as string;
+        file.text().then((fileContent) => {
           setContent(fileContent);
           // Auto-compile will happen via useEffect
-        };
-        reader.readAsText(file);
+        }).catch((error) => {
+          console.error('Failed to read file:', error);
+          alert('Failed to read the selected file.');
+        });
       }
     };
     input.click();
   };
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(content);
     alert('Content copied to clipboard!');
-  };
+  }, [content]);
 
   const handlePaste = async () => {
     try {
@@ -292,6 +296,70 @@ function App() {
     setZoomLevel(prev => Math.max(prev - 10, 100));
   };
 
+  // Keyboard shortcuts - placed after all handlers are defined
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for modifier keys (Ctrl/Cmd)
+      const isMac = navigator.userAgent.toUpperCase().includes('MAC');
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+      
+      if (modifier && !e.shiftKey && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 'n':
+            e.preventDefault();
+            handleNew();
+            break;
+          case 's':
+            e.preventDefault();
+            handleSave();
+            break;
+          case 'o':
+            e.preventDefault();
+            handleLoadInk();
+            break;
+          case 'e':
+            e.preventDefault();
+            handleExport();
+            break;
+          case 'c':
+            // Only handle if not in editor (let editor handle its own copy)
+            if (!(e.target as HTMLElement)?.closest('.cm-editor')) {
+              e.preventDefault();
+              handleCopy();
+            }
+            break;
+          case 'v':
+            // Only handle if not in editor (let editor handle its own paste)
+            if (!(e.target as HTMLElement)?.closest('.cm-editor')) {
+              e.preventDefault();
+              handlePaste();
+            }
+            break;
+          case 'r':
+            e.preventDefault();
+            handleRestart();
+            break;
+          case 'i':
+            e.preventDefault();
+            handleShowStats();
+            break;
+          case '=':
+          case '+':
+            e.preventDefault();
+            handleZoomIn();
+            break;
+          case '-':
+            e.preventDefault();
+            handleZoomOut();
+            break;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleCopy, handleExport, handleRestart, handleSave]);
+
   return (
     <div className="app">
       <header>
@@ -304,6 +372,7 @@ function App() {
         onCopy={handleCopy}
         onPaste={handlePaste}
         onShowStats={handleShowStats}
+        onRestart={handleRestart}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
       />

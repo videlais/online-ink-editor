@@ -32,7 +32,7 @@
 
 .modal-header h2 {
   margin: 0;
-  color: #ddd;
+  color: #ffffff;
   font-size: 18px;
   font-weight: 600;
 }
@@ -40,7 +40,7 @@
 .close-button {
   background: none;
   border: none;
-  color: #ddd;
+  color: #ffffff;
   font-size: 32px;
   line-height: 1;
   cursor: pointer;
@@ -51,6 +51,12 @@
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
+  border-radius: 4px;
+}
+
+.close-button:focus {
+  outline: 2px solid #007acc;
+  outline-offset: 2px;
 }
 
 .close-button:hover {
@@ -59,7 +65,7 @@
 
 .modal-body {
   padding: 20px;
-  color: #ddd;
+  color: #ffffff;
 }
 
 .stat-section {

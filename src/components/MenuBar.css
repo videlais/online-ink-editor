@@ -15,15 +15,22 @@
 .menu-button {
   background: none;
   border: none;
-  color: #ddd;
+  color: #ffffff;
   padding: 8px 16px;
   cursor: pointer;
   font-size: 1em;
   transition: background-color 0.2s;
+  border-radius: 4px;
 }
 
 .menu-button:hover {
-  background-color: #3d3d3d;
+  background-color: #4a4a4a;
+}
+
+.menu-button:focus {
+  outline: 2px solid #007acc;
+  outline-offset: 2px;
+  background-color: #4a4a4a;
 }
 
 .dropdown {
@@ -38,18 +45,35 @@
 }
 
 .dropdown button {
-  display: block;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   width: 100%;
   background: none;
   border: none;
-  color: #ddd;
+  color: #ffffff;
   padding: 10px 16px;
   text-align: left;
   cursor: pointer;
   font-size: 1em;
   transition: background-color 0.2s;
+  border-radius: 2px;
 }
 
 .dropdown button:hover {
-  background-color: #3d3d3d;
+  background-color: #4a4a4a;
+}
+
+.dropdown button:focus {
+  outline: 2px solid #007acc;
+  outline-offset: -2px;
+  background-color: #4a4a4a;
+}
+
+.shortcut {
+  color: #999;
+  font-size: 0.85em;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  margin-left: 16px;
+  opacity: 0.8;
 }

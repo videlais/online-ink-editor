@@ -5,7 +5,7 @@ async function setEditorContent(page: Page, content: string) {
   await page.evaluate((text) => {
     const editorElement = document.querySelector('.cm-content');
     if (editorElement) {
-      const view = (editorElement as any).cmView?.view;
+      const view = (editorElement as { cmView?: { view?: unknown } }).cmView?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }
@@ -59,8 +59,6 @@ test.describe('Menu Operations and Export', () => {
     const testContent = 'Content to copy to clipboard.';
     await setEditorContent(page, testContent);
     
-    const editor = page.locator('.cm-content');
-    
     // When: User clicks Edit > Copy
     const editMenu = page.locator('button:has-text("Edit")').first();
     await editMenu.click();
@@ -109,7 +107,7 @@ test.describe('Menu Operations and Export', () => {
   test('should zoom in and increase font size', async ({ page }) => {
     // Given: The app is at default zoom
     const mainContent = page.locator('.main-content');
-    const initialStyle = await mainContent.getAttribute('style');
+
     
     // When: User clicks View > Zoom In
     const viewMenu = page.locator('button:has-text("View")').first();
@@ -177,8 +175,6 @@ test.describe('Menu Operations and Export', () => {
     const testStory = 'Test story for export.';
     await setEditorContent(page, testStory);
     
-    const editor = page.locator('.cm-content');
-    
     await page.waitForTimeout(700); // Wait for compile
     
     // When: User clicks File > Export JSON
@@ -206,8 +202,6 @@ test.describe('Menu Operations and Export', () => {
     const testStory = 'Test Ink story for file export.';
     await setEditorContent(page, testStory);
     
-    const editor = page.locator('.cm-content');
-    
     await page.waitForTimeout(700); // Wait for compile
     
     // When: User clicks File > Save as .ink
@@ -233,8 +227,6 @@ test.describe('Menu Operations and Export', () => {
   -> END`;
     
     await setEditorContent(page, storyContent);
-    
-    const editor = page.locator('.cm-content');
     
     // Make a choice
     const choice = page.locator('button:has-text("Continue")');
