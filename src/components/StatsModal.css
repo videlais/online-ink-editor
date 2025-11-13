@@ -1,0 +1,93 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #444;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #ddd;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #ddd;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.close-button:hover {
+  color: #fff;
+}
+
+.modal-body {
+  padding: 20px;
+  color: #ddd;
+}
+
+.stat-section {
+  margin-bottom: 24px;
+}
+
+.stat-section:last-child {
+  margin-bottom: 0;
+}
+
+.stat-section h3 {
+  margin: 0 0 12px 0;
+  color: #007acc;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.stat-section p {
+  margin: 8px 0;
+}
+
+.stat-list {
+  margin: 8px 0;
+  padding-left: 24px;
+  list-style-type: disc;
+}
+
+.stat-list li {
+  margin: 4px 0;
+  color: #ccc;
+}
