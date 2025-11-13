@@ -3,7 +3,7 @@ import type { StreamParser } from '@codemirror/language';
 
 // Define Ink syntax highlighting
 const inkParser: StreamParser<unknown> = {
-  token(stream) {
+  token(stream, state) {
     // Comments
     if (stream.match(/^\/\/.*/)) {
       return 'comment';
@@ -43,9 +43,18 @@ const inkParser: StreamParser<unknown> = {
       return 'operator';
     }
     
-    // Special keywords
-    if (stream.match(/^(END|DONE|function|return|true|false|not|and|or|mod|has|hasnt)\b/)) {
-      return 'keyword';
+    // Special keywords - match only complete words
+    const keywordRegex = /^(END|DONE|function|return|true|false|not|and|or|mod|has|hasnt)(?!\w)/;
+    if (stream.match(keywordRegex)) {
+      // Check if we're at the start of a word (not preceded by a word character)
+      const prevPos = stream.pos - stream.current().length - 1;
+      const prevChar = prevPos >= 0 ? stream.string.charAt(prevPos) : '';
+      if (!prevChar || !/\w/.test(prevChar)) {
+        return 'keyword';
+      } else {
+        // This is part of a larger word, backtrack
+        stream.backUp(stream.current().length);
+      }
     }
     
     // Choice markers
