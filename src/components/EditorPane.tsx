@@ -1,5 +1,6 @@
 import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
+import { EditorView } from '@codemirror/view';
 import { ink } from '../utils/inkLanguage';
 import './EditorPane.css';
 
@@ -12,13 +13,13 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ value, onChange }) => {
   return (
     <div className="editor-pane">
       <div className="editor-header">
-        <h3>Ink Editor</h3>
+        <h3>Editor</h3>
       </div>
             <CodeMirror
         value={value}
-        height="100%"
-        maxHeight="100%"
-        extensions={[ink()]}
+        height="calc(100vh - 90px)"
+        maxHeight="calc(100vh - 90px)"
+        extensions={[ink(), EditorView.lineWrapping]}
         onChange={(value) => onChange(value)}
         theme="dark"
         basicSetup={{

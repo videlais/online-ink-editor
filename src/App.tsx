@@ -5,6 +5,7 @@ import { MenuBar } from './components/MenuBar';
 import { EditorPane } from './components/EditorPane';
 import { StoryPane } from './components/StoryPane';
 import { StatsModal } from './components/StatsModal';
+import { ResizableSplitter } from './components/ResizableSplitter';
 import type { Choice, StoryStats } from './types';
 import { analyzeInkStory, saveToLocalStorage, loadFromLocalStorage, exportAsJSON } from './utils/inkUtils';
 import './App.css';
@@ -307,20 +308,28 @@ function App() {
       />
       
       <div className="main-content" style={{ fontSize: `${zoomLevel}%` }}>
-        <div className="editor-container">
-          <EditorPane value={content} onChange={setContent} />
-        </div>
-        
-        <div className="story-container">
-          <StoryPane
-            output={output}
-            choices={choices}
-            errors={errors}
-            isRunning={isRunning}
-            onRestart={handleRestart}
-            onChoice={handleChoice}
-          />
-        </div>
+        <ResizableSplitter
+          defaultLeftWidth={50}
+          minLeftWidth={25}
+          minRightWidth={25}
+          leftPanel={
+            <div className="editor-container">
+              <EditorPane value={content} onChange={setContent} />
+            </div>
+          }
+          rightPanel={
+            <div className="story-container">
+              <StoryPane
+                output={output}
+                choices={choices}
+                errors={errors}
+                isRunning={isRunning}
+                onRestart={handleRestart}
+                onChoice={handleChoice}
+              />
+            </div>
+          }
+        />
       </div>
       
       {showStats && (

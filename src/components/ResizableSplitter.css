@@ -1,0 +1,65 @@
+.resizable-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.resizable-left-panel,
+.resizable-right-panel {
+  height: 100%;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.resizable-splitter {
+  width: 4px;
+  background-color: #444;
+  cursor: col-resize;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  margin: 0;
+  outline: none;
+}
+
+.resizable-splitter:hover {
+  background-color: #007acc;
+}
+
+.resizable-splitter:hover .splitter-handle {
+  opacity: 1;
+}
+
+.splitter-handle {
+  width: 2px;
+  height: 40px;
+  background-color: #666;
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.resizable-container.dragging {
+  user-select: none;
+}
+
+.resizable-container.dragging .resizable-splitter {
+  background-color: #007acc;
+}
+
+.resizable-container.dragging .splitter-handle {
+  opacity: 1;
+  background-color: #fff;
+}
+
+/* Prevent content from being selectable during drag */
+.resizable-container.dragging * {
+  user-select: none !important;
+}
