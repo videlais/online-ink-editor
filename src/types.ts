@@ -4,7 +4,7 @@ export interface StoryState {
   choices: Choice[];
   isRunning: boolean;
   errors: string[];
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
 }
 
 export interface Choice {

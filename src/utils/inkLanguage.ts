@@ -49,12 +49,12 @@ const inkParser: StreamParser<unknown> = {
     }
     
     // Choice markers
-    if (stream.match(/^[\*\+]/)) {
+    if (stream.match(/^[*+]/)) {
       return 'keyword';
     }
     
     // Gather markers
-    if (stream.match(/^-(?!\>)/)) {
+    if (stream.match(/^-(?!>)/)) {
       return 'keyword';
     }
     

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Story } from 'inkjs/engine/Story';
 import { Compiler } from 'inkjs/compiler/Compiler';
 import { MenuBar } from './components/MenuBar';
@@ -23,35 +23,78 @@ Hello, world! This is your ink story.
 `;
 
 function App() {
-  const [content, setContent] = useState<string>(DEFAULT_INK);
+  const [content, setContent] = useState<string>(() => loadFromLocalStorage() || DEFAULT_INK);
   const [output, setOutput] = useState<string[]>([]);
   const [choices, setChoices] = useState<Choice[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState<StoryStats>({ wordCount: 0, knots: [], stitches: [], variables: [] });
-  const [variables, setVariables] = useState<Record<string, any>>({});
+  const [variables, setVariables] = useState<Record<string, unknown>>({});
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const storyRef = useRef<Story | null>(null);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const saved = loadFromLocalStorage();
-    if (saved) {
-      setContent(saved);
+  const continueStory = useCallback((story: Story) => {
+    const newOutput: string[] = [];
+    
+    try {
+      while (story.canContinue) {
+        const line = story.Continue();
+        if (line && line.trim()) {
+          newOutput.push(line.trim());
+        }
+      }
+      
+      setOutput(newOutput);
+      
+      // Get current choices
+      if (story.currentChoices.length > 0) {
+        const currentChoices = story.currentChoices.map((choice: { index: number; text: string }) => ({
+          index: choice.index,
+          text: choice.text,
+        }));
+        setChoices(currentChoices);
+      } else {
+        setChoices([]);
+      }
+      
+      // Get current variables
+      const vars: Record<string, unknown> = {};
+      if (story.variablesState) {
+        // Access variables through the public API
+        try {
+          const variableNames = (story.variablesState as unknown as { _globalVariables?: Record<string, unknown> })._globalVariables;
+          if (variableNames) {
+            for (const key of Object.keys(variableNames)) {
+              vars[key] = variableNames[key];
+            }
+          }
+        } catch (e) {
+          // If accessing private property fails, skip variable extraction
+          console.warn('Could not extract variables:', e);
+        }
+      }
+      setVariables(vars);
+    } catch (error) {
+      const errorMessages: string[] = [];
+      
+      if (error instanceof Error) {
+        errorMessages.push(`Runtime Error: ${error.message}`);
+        
+        const errorObj = error as { lineNumber?: number };
+        if (errorObj.lineNumber !== undefined) {
+          errorMessages.push(`At line: ${errorObj.lineNumber}`);
+        }
+      } else {
+        errorMessages.push(`Runtime Error: ${String(error)}`);
+      }
+      
+      console.error('Runtime error:', error);
+      setErrors(errorMessages);
     }
   }, []);
 
-  // Auto-compile when content changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      compileAndRun();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [content]);
-
-  const compileAndRun = () => {
+  const compileAndRun = useCallback(() => {
     setErrors([]);
     
     try {
@@ -59,7 +102,7 @@ function App() {
       const compiler = new Compiler(content);
       
       // Access the compiler object to check for errors
-      const compilerObj = compiler as any;
+      const compilerObj = compiler as unknown;
       
       // Try to compile
       let story;
@@ -70,24 +113,30 @@ function App() {
         const errorMessages: string[] = [];
         
         // Check various possible error properties
-        if (compilerObj.errors && compilerObj.errors.length > 0) {
-          compilerObj.errors.forEach((err: any) => {
-            if (typeof err === 'string') {
-              errorMessages.push(err);
-            } else if (err.message) {
-              errorMessages.push(err.message);
-            } else if (err.toString) {
-              errorMessages.push(err.toString());
-            }
-          });
-        } else if (compilerObj._errors && compilerObj._errors.length > 0) {
-          compilerObj._errors.forEach((err: any) => {
-            if (typeof err === 'string') {
-              errorMessages.push(err);
-            } else if (err.message) {
-              errorMessages.push(err.message);
-            }
-          });
+        if (compilerObj && typeof compilerObj === 'object' && 'errors' in compilerObj) {
+          const errors = (compilerObj as { errors?: unknown[] }).errors;
+          if (errors && errors.length > 0) {
+            errors.forEach((err: unknown) => {
+              if (typeof err === 'string') {
+                errorMessages.push(err);
+              } else if (err && typeof err === 'object' && 'message' in err) {
+                errorMessages.push(String((err as { message: unknown }).message));
+              } else if (err && typeof err === 'object' && 'toString' in err) {
+                errorMessages.push(String(err));
+              }
+            });
+          }
+        } else if (compilerObj && typeof compilerObj === 'object' && '_errors' in compilerObj) {
+          const errors = (compilerObj as { _errors?: unknown[] })._errors;
+          if (errors && errors.length > 0) {
+            errors.forEach((err: unknown) => {
+              if (typeof err === 'string') {
+                errorMessages.push(err);
+              } else if (err && typeof err === 'object' && 'message' in err) {
+                errorMessages.push(String((err as { message: unknown }).message));
+              }
+            });
+          }
         } else if (compileError instanceof Error) {
           // Try to extract from the error itself
           errorMessages.push(compileError.message);
@@ -131,66 +180,16 @@ function App() {
       setIsRunning(false);
       storyRef.current = null;
     }
-  };
+  }, [content, continueStory]);
 
-  const continueStory = (story: Story) => {
-    const newOutput: string[] = [];
-    
-    try {
-      while (story.canContinue) {
-        const line = story.Continue();
-        if (line && line.trim()) {
-          newOutput.push(line.trim());
-        }
-      }
-      
-      setOutput(newOutput);
-      
-      // Get current choices
-      if (story.currentChoices.length > 0) {
-        const currentChoices = story.currentChoices.map((choice: any) => ({
-          index: choice.index,
-          text: choice.text,
-        }));
-        setChoices(currentChoices);
-      } else {
-        setChoices([]);
-      }
-      
-      // Get current variables
-      const vars: Record<string, any> = {};
-      if (story.variablesState) {
-        // Access variables through the public API
-        try {
-          const variableNames = (story.variablesState as any)._globalVariables;
-          if (variableNames) {
-            for (const key of Object.keys(variableNames)) {
-              vars[key] = variableNames[key];
-            }
-          }
-        } catch (e) {
-          // If accessing private property fails, skip variable extraction
-          console.warn('Could not extract variables:', e);
-        }
-      }
-      setVariables(vars);
-    } catch (error) {
-      const errorMessages: string[] = [];
-      
-      if (error instanceof Error) {
-        errorMessages.push(`Runtime Error: ${error.message}`);
-        
-        const errorObj = error as any;
-        if (errorObj.lineNumber !== undefined) {
-          errorMessages.push(`Line: ${errorObj.lineNumber}`);
-        }
-      } else {
-        errorMessages.push(`Runtime Error: ${String(error)}`);
-      }
-      
-      setErrors(prev => [...prev, ...errorMessages]);
-    }
-  };
+  // Auto-compile when content changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      compileAndRun();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [content, compileAndRun]);
 
   const handleChoice = (index: number) => {
     if (storyRef.current) {
@@ -255,7 +254,7 @@ function App() {
     try {
       const text = await navigator.clipboard.readText();
       setContent(text);
-    } catch (error) {
+    } catch {
       alert('Failed to paste from clipboard. Please use Cmd+V instead.');
     }
   };

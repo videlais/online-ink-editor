@@ -4,7 +4,7 @@ import './StatsModal.css';
 
 interface StatsModalProps {
   stats: StoryStats;
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
   onClose: () => void;
 }
 

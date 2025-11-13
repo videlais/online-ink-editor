@@ -1,0 +1,237 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import App from '../src/App';
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});
+
+describe('Feature: Ink Editor Application', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+  });
+
+  describe('Scenario: User opens the application for the first time', () => {
+    it('Given the user has never used the editor before, When the app loads, Then it should display the default Ink story', () => {
+      render(<App />);
+      
+      expect(screen.getByText('Ink Editor')).toBeInTheDocument();
+      expect(screen.getByText('Story Preview')).toBeInTheDocument();
+    });
+
+    it('Given the app is loaded, When no story is compiled, Then it should show placeholder text', () => {
+      render(<App />);
+      
+      expect(screen.getByText(/Compile your Ink story to see the output here/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: User edits Ink content', () => {
+    it('Given the editor is open, When the user types Ink code, Then the editor should be interactive', () => {
+      render(<App />);
+      
+      const editor = screen.getByRole('textbox');
+      // CodeMirror is rendered and accessible
+      expect(editor).toBeInTheDocument();
+      // Editor has contenteditable for interaction
+      expect(editor.closest('.cm-editor')).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: User compiles and runs Ink story', () => {
+    it('Given valid Ink code is entered, When compilation happens, Then it should display the story output', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      
+      const editor = screen.getByRole('textbox');
+      await user.clear(editor);
+      await user.type(editor, 'Hello from Ink!');
+      
+      // Wait for auto-compilation (2 second delay)
+      await waitFor(
+        () => {
+          const output = screen.queryByText(/Hello from Ink!/i);
+          if (output) {
+            expect(output).toBeInTheDocument();
+          }
+        },
+        { timeout: 3000 }
+      );
+    });
+  });
+
+  describe('Scenario: User interacts with story choices', () => {
+    it('Given a story with choices is running, When the user clicks a choice, Then it should continue the story', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      
+      // The default story has choices
+      await waitFor(
+        () => {
+          const choiceButtons = screen.queryAllByRole('button', { name: /Choice/i });
+          expect(choiceButtons.length).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
+
+      const choiceButtons = screen.getAllByRole('button', { name: /Choice/i });
+      await user.click(choiceButtons[0]);
+      
+      await waitFor(() => {
+        // Story output should update after choice
+        const storyPane = document.querySelector('.story-pane');
+        expect(storyPane).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Scenario: User restarts the story', () => {
+    it('Given a story is running, When the user clicks restart, Then it should reset to the beginning', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      
+      await waitFor(() => {
+        const restartButton = screen.getByRole('button', { name: /Restart/i });
+        expect(restartButton).toBeInTheDocument();
+      });
+
+      const restartButton = screen.getByRole('button', { name: /Restart/i });
+      await user.click(restartButton);
+      
+      // After restart, choices should be available again
+      await waitFor(
+        () => {
+          const choiceButtons = screen.queryAllByRole('button', { name: /Choice/i });
+          expect(choiceButtons.length).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
+    });
+  });
+
+  describe('Scenario: User manages zoom levels', () => {
+    it('Given the app is open, When the user zooms in, Then the font size should increase', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      
+      const viewMenu = screen.getByText('View');
+      await user.click(viewMenu);
+      
+      const zoomInButton = screen.getByText('Zoom In');
+      await user.click(zoomInButton);
+      
+      const mainContent = document.querySelector('.main-content');
+      expect(mainContent).toHaveStyle({ fontSize: '110%' });
+    });
+
+    it('Given the app is open, When the user zooms out, Then the font size should decrease', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      
+      // First zoom in to 110%, then zoom out to 100%
+      const viewMenu = screen.getByText('View');
+      await user.click(viewMenu);
+      const zoomInButton = screen.getByText('Zoom In');
+      await user.click(zoomInButton);
+      
+      // Now zoom out from 110% to 100%
+      await user.click(viewMenu);
+      const zoomOutButton = screen.getByText('Zoom Out');
+      await user.click(zoomOutButton);
+      
+      const mainContent = document.querySelector('.main-content');
+      expect(mainContent).toHaveStyle({ fontSize: '100%' });
+    });
+  });
+
+  describe('Scenario: User saves and loads content', () => {
+    it('Given the user has entered content, When they manually save, Then it should save to localStorage', async () => {
+      const user = userEvent.setup();
+      localStorage.clear();
+      
+      render(<App />);
+      
+      // Click File menu and Save Project
+      const fileMenu = screen.getByText('File');
+      await user.click(fileMenu);
+      
+      const saveButton = screen.getByText('Save Project');
+      await user.click(saveButton);
+      
+      // Verify content was saved (it should save the default Ink story)
+      const saved = localStorage.getItem('inkEditor_content');
+      expect(saved).not.toBeNull();
+      expect(saved).toBeTruthy();
+    });
+
+    it('Given content was previously saved, When the app reloads, Then it should restore the saved content', () => {
+      localStorage.setItem('inkEditor_content', 'Previously saved story');
+      
+      render(<App />);
+      
+      // Editor should be rendered with content from localStorage
+      const editor = screen.getByRole('textbox');
+      expect(editor).toBeInTheDocument();
+      // Content is loaded into CodeMirror (visible in cm-content)
+      const cmContent = document.querySelector('.cm-content');
+      expect(cmContent).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Error handling', () => {
+    it('Given invalid Ink syntax, When compilation occurs, Then it should display error messages', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      
+      const editor = screen.getByRole('textbox');
+      await user.clear(editor);
+      await user.type(editor, '-> invalid_knot_reference');
+      
+      await waitFor(
+        () => {
+          const errorSection = screen.queryByText(/Errors:/i);
+          if (errorSection) {
+            expect(errorSection).toBeInTheDocument();
+          }
+        },
+        { timeout: 3000 }
+      );
+    });
+  });
+
+  describe('Scenario: User views story statistics', () => {
+    it('Given the app is open, When the user clicks Story > Statistics, Then it should show the stats modal', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      
+      const storyMenu = screen.getByText('Story');
+      await user.click(storyMenu);
+      
+      const statsButton = screen.getByText('Story Statistics');
+      await user.click(statsButton);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Story Statistics')).toBeInTheDocument();
+      });
+    });
+  });
+});

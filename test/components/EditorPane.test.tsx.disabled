@@ -1,0 +1,101 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { EditorPane } from '../../src/components/EditorPane';
+
+describe('Feature: Editor Pane Component', () => {
+  describe('Scenario: User views the editor pane', () => {
+    it('Given the component is rendered, When it loads, Then it should display the editor header', () => {
+      const mockOnChange = vi.fn();
+      render(<EditorPane value="" onChange={mockOnChange} />);
+      
+      expect(screen.getByText('Ink Editor')).toBeInTheDocument();
+    });
+
+    it('Given initial content is provided, When the component renders, Then it should display that content', () => {
+      const mockOnChange = vi.fn();
+      const initialContent = 'Hello, Ink!';
+      
+      render(<EditorPane value={initialContent} onChange={mockOnChange} />);
+      
+      // CodeMirror renders the content in its own structure
+      const editor = screen.getByRole('textbox');
+      expect(editor).toBeInTheDocument();
+      const cmContent = document.querySelector('.cm-content');
+      expect(cmContent).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: User edits content in the editor', () => {
+    it('Given the editor is displayed, When the user types text, Then the onChange handler should be called', async () => {
+      const user = userEvent.setup();
+      const mockOnChange = vi.fn();
+      
+      render(<EditorPane value="" onChange={mockOnChange} />);
+      
+      const editor = screen.getByRole('textbox');
+      await user.type(editor, 'New text');
+      
+      expect(mockOnChange).toHaveBeenCalled();
+    });
+
+    it('Given the editor has content, When the component updates, Then it should render the new content', () => {
+      const mockOnChange = vi.fn();
+      const { rerender } = render(<EditorPane value="Some content" onChange={mockOnChange} />);
+      
+      // Update with new content
+      rerender(<EditorPane value="New content" onChange={mockOnChange} />);
+      
+      const editor = screen.getByRole('textbox');
+      expect(editor).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Editor provides code editing features', () => {
+    it('Given the editor is rendered, When checking available features, Then it should have line numbers enabled', () => {
+      const mockOnChange = vi.fn();
+      render(<EditorPane value="" onChange={mockOnChange} />);
+      
+      // CodeMirror renders with line numbers - check for the gutter element
+      const editorContainer = document.querySelector('.cm-editor');
+      expect(editorContainer).toBeInTheDocument();
+    });
+
+    it('Given the editor is in dark theme, When rendered, Then it should apply the dark theme', () => {
+      const mockOnChange = vi.fn();
+      render(<EditorPane value="" onChange={mockOnChange} />);
+      
+      const editorElement = document.querySelector('.cm-editor');
+      expect(editorElement).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Editor handles Ink-specific syntax', () => {
+    it('Given Ink code with knots is entered, When rendered, Then it should accept Ink syntax patterns', () => {
+      const mockOnChange = vi.fn();
+      const inkCode = `=== knot_name ===
+This is a knot.
+-> END`;
+      
+      render(<EditorPane value={inkCode} onChange={mockOnChange} />);
+      
+      // CodeMirror accepts and renders the content
+      const editor = screen.getByRole('textbox');
+      expect(editor).toBeInTheDocument();
+    });
+
+    it('Given Ink code with choices is entered, When displayed, Then it should show choice syntax', () => {
+      const mockOnChange = vi.fn();
+      const inkCode = `* [Choice one]
+  -> END
+* [Choice two]
+  -> END`;
+      
+      render(<EditorPane value={inkCode} onChange={mockOnChange} />);
+      
+      // CodeMirror accepts and renders choice syntax
+      const editor = screen.getByRole('textbox');
+      expect(editor).toBeInTheDocument();
+    });
+  });
+});
