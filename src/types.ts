@@ -1,3 +1,9 @@
+export interface InkFile {
+  id: string;
+  name: string;
+  content: string;
+}
+
 export interface StoryState {
   content: string;
   output: string[];

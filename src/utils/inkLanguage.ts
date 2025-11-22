@@ -1,10 +1,27 @@
 import { StreamLanguage } from '@codemirror/language';
 import type { StreamParser } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
 
 // Define Ink syntax highlighting
-const inkParser: StreamParser<unknown> = {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  token(stream, _state) {
+const inkParser: StreamParser<{ afterInclude?: boolean }> = {
+  startState() {
+    return { afterInclude: false };
+  },
+  
+  token(stream, state) {
+    // If we're processing the filename after INCLUDE
+    if (state.afterInclude) {
+      stream.skipToEnd();
+      state.afterInclude = false;
+      return 'comment'; // Style filenames like comments (grey, italic)
+    }
+    
+    // Check for INCLUDE keyword at start of token
+    if (stream.match(/^INCLUDE\b/)) {
+      state.afterInclude = true;
+      return 'keyword.special'; // Special keyword tag for styling
+    }
+    
     // Comments
     if (stream.match(/^\/\/.*/)) {
       return 'comment';

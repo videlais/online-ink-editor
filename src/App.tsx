@@ -6,8 +6,9 @@ import { EditorPane } from './components/EditorPane';
 import { StoryPane } from './components/StoryPane';
 import { StatsModal } from './components/StatsModal';
 import { ResizableSplitter } from './components/ResizableSplitter';
-import type { Choice, StoryStats } from './types';
+import type { Choice, StoryStats, InkFile } from './types';
 import { analyzeInkStory, saveToLocalStorage, loadFromLocalStorage, exportAsJSON } from './utils/inkUtils';
+import { resolveIncludes } from './utils/includeResolver';
 import './App.css';
 
 const DEFAULT_INK = `// Welcome to the ink Editor!
@@ -24,7 +25,26 @@ Hello, world! This is your ink story.
 `;
 
 function App() {
-  const [content, setContent] = useState<string>(() => loadFromLocalStorage() || DEFAULT_INK);
+  const [files, setFiles] = useState<InkFile[]>(() => {
+    const saved = loadFromLocalStorage();
+    if (saved) {
+      try {
+        const parsedFiles = JSON.parse(saved);
+        if (Array.isArray(parsedFiles) && parsedFiles.length > 0) {
+          return parsedFiles;
+        }
+      } catch {
+        // Fall through to default
+      }
+    }
+    return [{ id: '1', name: 'main.ink', content: DEFAULT_INK }];
+  });
+  const [activeFileId, setActiveFileId] = useState<string>('1');
+  const [mainFileId, setMainFileId] = useState<string>('1'); // Always compile from this file
+  
+  // Derive merged content from main file (not active file)
+  const content = resolveIncludes(files, mainFileId);
+  
   const [output, setOutput] = useState<string[]>([]);
   const [choices, setChoices] = useState<Choice[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -34,6 +54,11 @@ function App() {
   const [variables, setVariables] = useState<Record<string, unknown>>({});
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const storyRef = useRef<Story | null>(null);
+
+  // Save files to localStorage whenever they change
+  useEffect(() => {
+    saveToLocalStorage(JSON.stringify(files));
+  }, [files]);
 
   const continueStory = useCallback((story: Story) => {
     const newOutput: string[] = [];
@@ -221,7 +246,14 @@ function App() {
 
   const handleNew = () => {
     if (confirm('Create a new project? Any unsaved changes will be lost.')) {
-      setContent(DEFAULT_INK);
+      const newFile: InkFile = {
+        id: '1',
+        name: 'main.ink',
+        content: DEFAULT_INK,
+      };
+      setFiles([newFile]);
+      setActiveFileId('1');
+      setMainFileId('1');
       setOutput([]);
       setChoices([]);
       setErrors([]);
@@ -230,9 +262,9 @@ function App() {
   };
 
   const handleSave = useCallback(() => {
-    saveToLocalStorage(content);
+    saveToLocalStorage(JSON.stringify(files));
     alert('Project saved to localStorage!');
-  }, [content]);
+  }, [files]);
 
   const handleExport = useCallback(() => {
     exportAsJSON(content);
@@ -259,8 +291,13 @@ function App() {
       const file = target.files?.[0];
       if (file) {
         file.text().then((fileContent) => {
-          setContent(fileContent);
-          // Auto-compile will happen via useEffect
+          const newFile: InkFile = {
+            id: Date.now().toString(),
+            name: file.name,
+            content: fileContent,
+          };
+          setFiles(prev => [...prev, newFile]);
+          setActiveFileId(newFile.id);
         }).catch((error) => {
           console.error('Failed to read file:', error);
           alert('Failed to read the selected file.');
@@ -270,19 +307,70 @@ function App() {
     input.click();
   };
 
+  const handleFileChange = (fileId: string, newContent: string) => {
+    setFiles(prev => prev.map(f => 
+      f.id === fileId ? { ...f, content: newContent } : f
+    ));
+  };
+
+  const handleNewFile = () => {
+    const fileNumber = files.length + 1;
+    const newFile: InkFile = {
+      id: Date.now().toString(),
+      name: `file${fileNumber}.ink`,
+      content: '// New file\n',
+    };
+    setFiles(prev => [...prev, newFile]);
+    setActiveFileId(newFile.id);
+  };
+
+  const handleTabClose = (fileId: string) => {
+    if (files.length === 1) return; // Don't close last file
+    
+    const fileIndex = files.findIndex(f => f.id === fileId);
+    const newFiles = files.filter(f => f.id !== fileId);
+    setFiles(newFiles);
+    
+    // Switch to adjacent file if closing active file
+    if (fileId === activeFileId) {
+      const newIndex = fileIndex > 0 ? fileIndex - 1 : 0;
+      setActiveFileId(newFiles[newIndex].id);
+    }
+  };
+
+  const handleRenameFile = (fileId: string, newName: string) => {
+    // Ensure .ink extension
+    const name = newName.endsWith('.ink') ? newName : `${newName}.ink`;
+    setFiles(prev => prev.map(f => 
+      f.id === fileId ? { ...f, name } : f
+    ));
+  };
+
+  const handleSetMainFile = (fileId: string) => {
+    setMainFileId(fileId);
+    // Optionally notify user
+    const file = files.find(f => f.id === fileId);
+    if (file) {
+      console.log(`Main compilation file set to: ${file.name}`);
+    }
+  };
+
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(content);
     alert('Content copied to clipboard!');
   }, [content]);
 
-  const handlePaste = async () => {
+  const handlePaste = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText();
-      setContent(text);
+      // Paste into active file
+      setFiles(prev => prev.map(f => 
+        f.id === activeFileId ? { ...f, content: text } : f
+      ));
     } catch {
       alert('Failed to paste from clipboard. Please use Cmd+V instead.');
     }
-  };
+  }, [activeFileId]);
 
   const handleShowStats = () => {
     setShowStats(true);
@@ -358,7 +446,7 @@ function App() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleCopy, handleExport, handleRestart, handleSave]);
+  }, [handleCopy, handleExport, handleRestart, handleSave, handlePaste]);
 
   return (
     <div className="app">
@@ -385,7 +473,17 @@ function App() {
           minRightWidth={25}
           leftPanel={
             <div className="editor-container">
-              <EditorPane value={content} onChange={setContent} />
+              <EditorPane
+                files={files}
+                activeFileId={activeFileId}
+                mainFileId={mainFileId}
+                onFileChange={handleFileChange}
+                onTabClick={setActiveFileId}
+                onTabClose={handleTabClose}
+                onNewFile={handleNewFile}
+                onRenameFile={handleRenameFile}
+                onSetMainFile={handleSetMainFile}
+              />
             </div>
           }
           rightPanel={
