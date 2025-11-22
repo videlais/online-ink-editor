@@ -1,6 +1,5 @@
 import { StreamLanguage } from '@codemirror/language';
 import type { StreamParser } from '@codemirror/language';
-import { tags as t } from '@lezer/highlight';
 
 // Define Ink syntax highlighting
 const inkParser: StreamParser<{ afterInclude?: boolean }> = {

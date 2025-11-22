@@ -118,44 +118,77 @@ describe('Feature: File Tabs Management', () => {
   });
 
   describe('Scenario: Renaming files', () => {
-    it('Given a tab, When double-clicked and name entered, Then it should call onRenameFile', () => {
-      // Mock window.prompt
-      vi.stubGlobal('prompt', vi.fn(() => 'newname.ink'));
-
+    it('Given a tab, When clicked and name edited, Then it should call onRenameFile on blur', async () => {
+      const user = userEvent.setup();
       render(<TabBar {...defaultProps} />);
 
       const tab = screen.getByText('main.ink').parentElement;
-      fireEvent.doubleClick(tab!);
+      fireEvent.click(tab!);
+
+      const input = screen.getByLabelText('Rename file') as HTMLInputElement;
+      expect(input).toBeInTheDocument();
+      expect(input.value).toBe('main.ink');
+
+      await user.clear(input);
+      await user.type(input, 'newname.ink');
+      fireEvent.blur(input);
 
       expect(mockOnRenameFile).toHaveBeenCalledWith('1', 'newname.ink');
-
-      vi.unstubAllGlobals();
     });
 
-    it('Given a tab, When double-clicked and prompt cancelled, Then it should not call onRenameFile', () => {
-      vi.stubGlobal('prompt', vi.fn(() => null));
-
+    it('Given a tab, When clicked and Enter pressed, Then it should call onRenameFile', async () => {
+      const user = userEvent.setup();
       render(<TabBar {...defaultProps} />);
 
       const tab = screen.getByText('main.ink').parentElement;
-      fireEvent.doubleClick(tab!);
+      fireEvent.click(tab!);
 
-      expect(mockOnRenameFile).not.toHaveBeenCalled();
+      const input = screen.getByLabelText('Rename file') as HTMLInputElement;
+      await user.clear(input);
+      await user.type(input, 'newname.ink{Enter}');
 
-      vi.unstubAllGlobals();
+      expect(mockOnRenameFile).toHaveBeenCalledWith('1', 'newname.ink');
     });
 
-    it('Given a tab, When double-clicked with same name, Then it should not call onRenameFile', () => {
-      vi.stubGlobal('prompt', vi.fn(() => 'main.ink'));
-
+    it('Given a tab, When clicked and Escape pressed, Then it should cancel rename', async () => {
+      const user = userEvent.setup();
       render(<TabBar {...defaultProps} />);
 
       const tab = screen.getByText('main.ink').parentElement;
-      fireEvent.doubleClick(tab!);
+      fireEvent.click(tab!);
+
+      const input = screen.getByLabelText('Rename file') as HTMLInputElement;
+      await user.clear(input);
+      await user.type(input, 'newname.ink{Escape}');
 
       expect(mockOnRenameFile).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText('Rename file')).not.toBeInTheDocument();
+    });
 
-      vi.unstubAllGlobals();
+    it('Given a tab in edit mode, When name unchanged, Then it should not call onRenameFile', async () => {
+      render(<TabBar {...defaultProps} />);
+
+      const tab = screen.getByText('main.ink').parentElement;
+      fireEvent.click(tab!);
+
+      const input = screen.getByLabelText('Rename file');
+      fireEvent.blur(input);
+
+      expect(mockOnRenameFile).not.toHaveBeenCalled();
+    });
+
+    it('Given a tab in edit mode, When empty name submitted, Then it should not call onRenameFile', async () => {
+      const user = userEvent.setup();
+      render(<TabBar {...defaultProps} />);
+
+      const tab = screen.getByText('main.ink').parentElement;
+      fireEvent.click(tab!);
+
+      const input = screen.getByLabelText('Rename file');
+      await user.clear(input);
+      fireEvent.blur(input);
+
+      expect(mockOnRenameFile).not.toHaveBeenCalled();
     });
   });
 

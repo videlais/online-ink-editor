@@ -43,7 +43,7 @@ function App() {
   const [mainFileId, setMainFileId] = useState<string>('1'); // Always compile from this file
   
   // Derive merged content from main file (not active file)
-  const content = resolveIncludes(files, mainFileId);
+  const { content, errors: includeErrors } = resolveIncludes(files, mainFileId);
   
   const [output, setOutput] = useState<string[]>([]);
   const [choices, setChoices] = useState<Choice[]>([]);
@@ -122,6 +122,12 @@ function App() {
 
   const compileAndRun = useCallback(() => {
     setErrors([]);
+    
+    // Check for INCLUDE errors first
+    if (includeErrors.length > 0) {
+      setErrors(includeErrors);
+      return;
+    }
     
     try {
       // Compile the Ink story
@@ -210,7 +216,7 @@ function App() {
       setIsRunning(false);
       storyRef.current = null;
     }
-  }, [content, continueStory]);
+  }, [content, includeErrors, continueStory]);
 
   // Auto-compile when content changes
   useEffect(() => {

@@ -13,6 +13,7 @@ describe('Feature: Menu Bar Component', () => {
     onCopy: vi.fn(),
     onPaste: vi.fn(),
     onShowStats: vi.fn(),
+    onRestart: vi.fn(),
     onZoomIn: vi.fn(),
     onZoomOut: vi.fn(),
   };

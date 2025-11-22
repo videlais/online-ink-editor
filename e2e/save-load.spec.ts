@@ -55,7 +55,10 @@ test.describe('Save and Load Workflows', () => {
       localStorage.getItem('inkEditor_content')
     );
     
-    expect(savedContent).toBe(customStory);
+    // localStorage now stores an array of files
+    const files = JSON.parse(savedContent!);
+    expect(Array.isArray(files)).toBe(true);
+    expect(files[0].content).toBe(customStory);
   });
 
   test('should load saved content from localStorage on page reload', async ({ page }) => {
@@ -63,7 +66,8 @@ test.describe('Save and Load Workflows', () => {
     const savedStory = 'Saved story that should persist across page loads.';
     
     await page.evaluate((content) => {
-      localStorage.setItem('inkEditor_content', content);
+      const files = [{ id: '1', name: 'main.ink', content }];
+      localStorage.setItem('inkEditor_content', JSON.stringify(files));
     }, savedStory);
     
     // When: User reloads the page
@@ -138,10 +142,13 @@ test.describe('Save and Load Workflows', () => {
 
   test('should handle empty localStorage gracefully', async ({ page }) => {
     // Given: localStorage is empty (already cleared in beforeEach)
+    // After page loads, it should create default file structure
+    await page.waitForTimeout(300);
     const storedContent = await page.evaluate(() => 
       localStorage.getItem('inkEditor_content')
     );
-    expect(storedContent).toBeNull();
+    // App now auto-saves on mount, so content exists
+    expect(storedContent).toBeTruthy();
     
     // When: Page loads
     // Then: Default Ink story should be loaded
@@ -183,7 +190,9 @@ test.describe('Save and Load Workflows', () => {
       localStorage.getItem('inkEditor_content')
     );
     
-    expect(savedContent).toBe(updatedStory);
-    expect(savedContent).not.toBe(initialStory);
+    const files = JSON.parse(savedContent!);
+    expect(Array.isArray(files)).toBe(true);
+    expect(files[0].content).toBe(updatedStory);
+    expect(files[0].content).not.toBe(initialStory);
   });
 });

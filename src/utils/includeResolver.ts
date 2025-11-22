@@ -1,17 +1,23 @@
 import type { InkFile } from '../types';
 
+export interface ResolveResult {
+  content: string;
+  errors: string[];
+}
+
 /**
  * Resolves INCLUDE statements in Ink files and returns merged content
  * @param files - Array of all project files
  * @param mainFileId - ID of the main file to start processing from
- * @returns Merged content with INCLUDE statements resolved
+ * @returns Object containing merged content and any errors
  */
-export function resolveIncludes(files: InkFile[], mainFileId: string): string {
+export function resolveIncludes(files: InkFile[], mainFileId: string): ResolveResult {
   const fileMap = new Map(files.map(f => [f.name, f.content]));
   const mainFile = files.find(f => f.id === mainFileId);
+  const errors: string[] = [];
   
   if (!mainFile) {
-    return '';
+    return { content: '', errors: [] };
   }
 
   const processed = new Set<string>();
@@ -19,7 +25,9 @@ export function resolveIncludes(files: InkFile[], mainFileId: string): string {
   function processFile(content: string, currentFileName: string): string {
     // Prevent circular includes
     if (processed.has(currentFileName)) {
-      return `// Circular INCLUDE detected: ${currentFileName}\n`;
+      const error = `Circular INCLUDE detected: ${currentFileName}`;
+      errors.push(error);
+      return `// ${error}\n`;
     }
     
     processed.add(currentFileName);
@@ -31,7 +39,9 @@ export function resolveIncludes(files: InkFile[], mainFileId: string): string {
       const includedContent = fileMap.get(filename);
       
       if (!includedContent) {
-        return `// ERROR: File not found: ${filename}\n`;
+        const error = `Included file "${filename}" does not exist (resolved from "${currentFileName}")`;
+        errors.push(error);
+        return `// ERROR: ${error}\n`;
       }
       
       // Recursively process the included file
@@ -39,5 +49,6 @@ export function resolveIncludes(files: InkFile[], mainFileId: string): string {
     });
   }
   
-  return processFile(mainFile.content, mainFile.name);
+  const content = processFile(mainFile.content, mainFile.name);
+  return { content, errors };
 }

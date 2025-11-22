@@ -42,6 +42,24 @@
   margin-right: 0.5rem;
 }
 
+.tab-name-input {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--primary);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  padding: 2px 4px;
+  outline: none;
+  font-family: inherit;
+  min-width: 100px;
+  max-width: 200px;
+}
+
+.tab-name-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(94, 179, 246, 0.2);
+}
+
 .tab-close {
   background: none;
   border: none;

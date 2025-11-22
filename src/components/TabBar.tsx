@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import './TabBar.css';
 
 export interface TabBarProps {
@@ -21,10 +22,47 @@ export const TabBar: React.FC<TabBarProps> = ({
   onRenameFile,
   onSetMainFile,
 }) => {
-  const handleTabDoubleClick = (fileId: string, currentName: string) => {
-    const newName = prompt('Enter new file name:', currentName);
-    if (newName && newName !== currentName) {
-      onRenameFile(fileId, newName);
+  const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingFileId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingFileId]);
+
+  const handleTabClick = (fileId: string) => {
+    if (editingFileId === fileId) {
+      // Already editing this tab
+      return;
+    }
+    setEditingFileId(fileId);
+    const file = files.find(f => f.id === fileId);
+    setEditingName(file?.name || '');
+    onTabClick(fileId);
+  };
+
+  const handleRenameSubmit = () => {
+    if (editingFileId && editingName.trim() && editingName !== files.find(f => f.id === editingFileId)?.name) {
+      onRenameFile(editingFileId, editingName.trim());
+    }
+    setEditingFileId(null);
+  };
+
+  const handleRenameCancel = () => {
+    setEditingFileId(null);
+    setEditingName('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleRenameSubmit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleRenameCancel();
     }
   };
 
@@ -46,14 +84,27 @@ export const TabBar: React.FC<TabBarProps> = ({
           className={`tab ${file.id === activeFileId ? 'active' : ''} ${file.id === mainFileId ? 'main-file' : ''}`}
           role="tab"
           aria-selected={file.id === activeFileId}
-          onClick={() => onTabClick(file.id)}
-          onDoubleClick={() => handleTabDoubleClick(file.id, file.name)}
+          onClick={() => handleTabClick(file.id)}
           onContextMenu={(e) => handleContextMenu(e, file.id)}
           title={file.id === mainFileId ? `${file.name} (Main compilation file)` : file.name}
         >
           <span className="tab-name">
             {file.id === mainFileId && <span className="main-indicator">★ </span>}
-            {file.name}
+            {editingFileId === file.id ? (
+              <input
+                ref={inputRef}
+                type="text"
+                className="tab-name-input"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onBlur={handleRenameSubmit}
+                onKeyDown={handleKeyDown}
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Rename file"
+              />
+            ) : (
+              file.name
+            )}
           </span>
           {files.length > 1 && (
             <button
