@@ -5,7 +5,8 @@ async function setEditorContent(page: Page, content: string) {
   await page.evaluate((text) => {
     const editorElement = document.querySelector('.cm-content');
     if (editorElement) {
-      const view = (editorElement as { cmView?: { view?: unknown } }).cmView?.view;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const view = (editorElement as { cmView?: { view?: any } }).cmView?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }
@@ -34,7 +35,7 @@ test.describe('Editor and Story Compilation', () => {
     await expect(content).toBeVisible();
     
     // Check for title
-    await expect(page.locator('h3:has-text("Ink Editor")')).toBeVisible();
+    await expect(page.locator('h3:has-text("Editor")')).toBeVisible();
   });
 
   test('should type into the editor and compile Ink story', async ({ page }) => {

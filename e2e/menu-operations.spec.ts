@@ -42,7 +42,7 @@ test.describe('Menu Operations and Export', () => {
     
     // Story menu
     await storyMenu.click();
-    await expect(page.locator('button:has-text("Restart")')).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /Restart Story/ })).toBeVisible();
     await storyMenu.click(); // Close
     
     // View menu
@@ -239,7 +239,7 @@ test.describe('Menu Operations and Export', () => {
     const storyMenu = page.locator('button:has-text("Story")').first();
     await storyMenu.click();
     
-    const restartButton = page.locator('button:has-text("Restart")');
+    const restartButton = page.getByRole('menuitem', { name: /Restart Story/ });
     await restartButton.click();
     
     // Then: Story should restart

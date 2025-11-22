@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StatsModal } from '../../src/components/StatsModal';
 import type { StoryStats } from '../../src/types';
@@ -64,7 +64,7 @@ describe('Feature: Story Statistics Modal', () => {
       const user = userEvent.setup();
       render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockOnClose} />);
       
-      const closeButton = screen.getByRole('button', { name: '×' });
+      const closeButton = screen.getByRole('button', { name: /close statistics modal/i });
       await user.click(closeButton);
       
       expect(mockOnClose).toHaveBeenCalled();
@@ -115,6 +115,129 @@ describe('Feature: Story Statistics Modal', () => {
       expect(screen.getByText('15000')).toBeInTheDocument();
       expect(screen.getByText('knot1')).toBeInTheDocument();
       expect(screen.getByText('knot10')).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Displaying variable values', () => {
+    it('Given a story with variables having different types, When displayed, Then it should show all variable values', () => {
+      const stats: StoryStats = {
+        wordCount: 100,
+        knots: [],
+        stitches: [],
+        variables: ['count', 'name', 'isActive'],
+      };
+      
+      const variables = {
+        count: 42,
+        name: 'TestName',
+        isActive: true,
+      };
+      
+      render(<StatsModal stats={stats} variables={variables} onClose={mockOnClose} />);
+      
+      // Check declared variables section
+      expect(screen.getByText('Declared:')).toBeInTheDocument();
+      
+      // Check current values section shows the values
+      expect(screen.getByText(/Current Values:/)).toBeInTheDocument();
+      expect(screen.getByText(/42/)).toBeInTheDocument();
+      expect(screen.getByText(/TestName/)).toBeInTheDocument();
+      expect(screen.getByText(/true/)).toBeInTheDocument();
+    });
+
+    it('Given variables with no declared list, When displayed, Then it should handle empty variable values', () => {
+      const stats: StoryStats = {
+        wordCount: 100,
+        knots: [],
+        stitches: [],
+        variables: [],
+      };
+      
+      const variables = {
+        undeclared: 'value',
+      };
+      
+      render(<StatsModal stats={stats} variables={variables} onClose={mockOnClose} />);
+      
+      expect(screen.getByText(/Current Values:/)).toBeInTheDocument();
+      expect(screen.getByText(/undeclared/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Keyboard interaction', () => {
+    it('Given the modal is open, When Escape key is pressed, Then it should call onClose', async () => {
+      const user = userEvent.setup();
+      render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockOnClose} />);
+      
+      await user.keyboard('{Escape}');
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('Given the modal is open, When Tab is pressed, Then focus should trap within modal', async () => {
+      const user = userEvent.setup();
+      render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockOnClose} />);
+      
+      const closeButton = screen.getByRole('button', { name: /close statistics modal/i });
+      expect(closeButton).toHaveFocus();
+      
+      // Tab should cycle focus within modal
+      await user.keyboard('{Tab}');
+      // Focus should still be on close button (only focusable element)
+      expect(closeButton).toHaveFocus();
+    });
+  });
+
+  describe('Scenario: Overlay interaction', () => {
+    it('Given the modal is open, When clicking on the overlay background, Then it should call onClose', async () => {
+      const user = userEvent.setup();
+      const { container } = render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockOnClose} />);
+      
+      const overlay = container.querySelector('.modal-overlay');
+      if (overlay) {
+        await user.click(overlay);
+        expect(mockOnClose).toHaveBeenCalled();
+      }
+    });
+
+    it('Given the modal is open, When clicking on modal content, Then it should not call onClose', async () => {
+      const user = userEvent.setup();
+      const mockClose = vi.fn();
+      const { container } = render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockClose} />);
+      
+      const modalContent = container.querySelector('.modal-content');
+      if (modalContent) {
+        await user.click(modalContent);
+        expect(mockClose).not.toHaveBeenCalled();
+      }
+    });
+
+    it('Given the modal is open with focused first element, When Shift+Tab is pressed, Then focus should move to last element', () => {
+      const { getByRole, container } = render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockOnClose} />);
+      
+      const closeButton = getByRole('button', { name: /close statistics modal/i });
+      closeButton.focus();
+      expect(closeButton).toHaveFocus();
+      
+      fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+      
+      const focusableElements = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+      expect(lastElement).toHaveFocus();
+    });
+
+    it('Given the modal is open with focused last element, When Tab is pressed, Then focus should move to first element', () => {
+      const { container } = render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockOnClose} />);
+      
+      const focusableElements = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+      const firstElement = focusableElements[0] as HTMLElement;
+      
+      lastElement.focus();
+      expect(lastElement).toHaveFocus();
+      
+      fireEvent.keyDown(document, { key: 'Tab', shiftKey: false });
+      
+      expect(firstElement).toHaveFocus();
     });
   });
 });

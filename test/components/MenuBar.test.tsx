@@ -9,6 +9,7 @@ describe('Feature: Menu Bar Component', () => {
     onSave: vi.fn(),
     onExport: vi.fn(),
     onSaveAsInk: vi.fn(),
+    onLoadInk: vi.fn(),
     onCopy: vi.fn(),
     onPaste: vi.fn(),
     onShowStats: vi.fn(),
@@ -95,6 +96,18 @@ describe('Feature: Menu Bar Component', () => {
       
       expect(onSaveAsInk).toHaveBeenCalled();
     });
+
+    it('Given the File menu is open, When "Load Ink File" is clicked, Then it should call the onLoadInk handler', async () => {
+      const user = userEvent.setup();
+      const onLoadInk = vi.fn();
+      
+      render(<MenuBar {...defaultProps} onLoadInk={onLoadInk} />);
+      
+      await user.click(screen.getByText('File'));
+      await user.click(screen.getByText('Load Ink File'));
+      
+      expect(onLoadInk).toHaveBeenCalled();
+    });
   });
 
   describe('Scenario: User interacts with Edit menu', () => {
@@ -143,6 +156,18 @@ describe('Feature: Menu Bar Component', () => {
       await user.click(storyMenu);
       
       expect(screen.getByText('Story Statistics')).toBeInTheDocument();
+    });
+
+    it('Given the Story menu is open, When "Restart Story" is clicked, Then it should call the onRestart handler', async () => {
+      const user = userEvent.setup();
+      const onRestart = vi.fn();
+      
+      render(<MenuBar {...defaultProps} onRestart={onRestart} />);
+      
+      await user.click(screen.getByText('Story'));
+      await user.click(screen.getByText('Restart Story'));
+      
+      expect(onRestart).toHaveBeenCalled();
     });
 
     it('Given the Story menu is open, When "Statistics" is clicked, Then it should call the onShowStats handler', async () => {
@@ -234,6 +259,136 @@ describe('Feature: Menu Bar Component', () => {
       
       // Menu should be closed after action
       expect(screen.queryByText('New Project')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Menu closes when clicking outside', () => {
+    it('Given a menu is open, When clicking outside the menu, Then the menu should close', async () => {
+      const user = userEvent.setup();
+      render(
+        <div>
+          <MenuBar {...defaultProps} />
+          <div data-testid="outside">Outside element</div>
+        </div>
+      );
+      
+      // Open File menu
+      await user.click(screen.getByText('File'));
+      expect(screen.getByText('New Project')).toBeInTheDocument();
+      
+      // Click outside
+      const outsideElement = screen.getByTestId('outside');
+      await user.click(outsideElement);
+      
+      // Menu should be closed
+      expect(screen.queryByText('New Project')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Keyboard navigation', () => {
+    it('Given a menu button is focused, When Escape is pressed, Then menus should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+      
+      const fileButton = screen.getByText('File');
+      await user.click(fileButton);
+      expect(screen.getByText('New Project')).toBeInTheDocument();
+      
+      await user.keyboard('{Escape}');
+      expect(screen.queryByText('New Project')).not.toBeInTheDocument();
+    });
+
+    it('Given File menu is open, When ArrowDown is pressed on menu button, Then focus should move to first menu item', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+      
+      const fileButton = screen.getByText('File');
+      fileButton.focus();
+      await user.keyboard('{Enter}');
+      expect(screen.getByText('New Project')).toBeInTheDocument();
+      
+      await user.keyboard('{ArrowDown}');
+      const firstMenuItem = screen.getByText('New Project').closest('button');
+      expect(firstMenuItem).toHaveFocus();
+    });
+
+    it('Given a menu item is focused, When Escape is pressed, Then the menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+      
+      await user.click(screen.getByText('Edit'));
+      const copyButton = screen.getByText('Copy');
+      copyButton.focus();
+      
+      await user.keyboard('{Escape}');
+      expect(screen.queryByText('Copy')).not.toBeInTheDocument();
+    });
+
+    it('Given Edit menu is open, When ArrowDown is pressed on menu button, Then focus should move to first menu item', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+      
+      const editButton = screen.getByText('Edit');
+      editButton.focus();
+      await user.keyboard('{Enter}');
+      expect(screen.getByText('Copy')).toBeInTheDocument();
+      
+      await user.keyboard('{ArrowDown}');
+      const firstMenuItem = screen.getByText('Copy').closest('button');
+      expect(firstMenuItem).toHaveFocus();
+    });
+
+    it('Given Story menu is open, When ArrowDown is pressed on menu button, Then focus should move to first menu item', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+      
+      const storyButton = screen.getByText('Story');
+      storyButton.focus();
+      await user.keyboard('{Enter}');
+      expect(screen.getByText('Restart Story')).toBeInTheDocument();
+      
+      await user.keyboard('{ArrowDown}');
+      const firstMenuItem = screen.getByText('Restart Story').closest('button');
+      expect(firstMenuItem).toHaveFocus();
+    });
+
+    it('Given View menu is open, When ArrowDown is pressed on menu button, Then focus should move to first menu item', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+      
+      const viewButton = screen.getByText('View');
+      viewButton.focus();
+      await user.keyboard('{Enter}');
+      expect(screen.getByText('Zoom In')).toBeInTheDocument();
+      
+      await user.keyboard('{ArrowDown}');
+      const firstMenuItem = screen.getByText('Zoom In').closest('button');
+      expect(firstMenuItem).toHaveFocus();
+    });
+
+    it('Given View menu is open, When Escape is pressed on menu button, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+      
+      const viewButton = screen.getByText('View');
+      await user.click(viewButton);
+      expect(screen.getByText('Zoom In')).toBeInTheDocument();
+      
+      viewButton.focus();
+      await user.keyboard('{Escape}');
+      expect(screen.queryByText('Zoom In')).not.toBeInTheDocument();
+    });
+
+    it('Given Story menu item is focused, When Escape is pressed, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+      
+      await user.click(screen.getByText('Story'));
+      const restartButton = screen.getByText('Restart Story');
+      restartButton.focus();
+      
+      await user.keyboard('{Escape}');
+      expect(screen.queryByText('Restart Story')).not.toBeInTheDocument();
     });
   });
 });

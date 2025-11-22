@@ -40,51 +40,6 @@ npm run build
 
 The built files will be in the `dist/` directory.
 
-## Usage
-
-1. **Write Ink Code**: Type or paste your Ink story in the left editor pane
-2. **See Live Preview**: The story automatically compiles and runs in the right pane
-3. **Make Choices**: Click on choices to progress through your story
-4. **Restart**: Use the Restart button to replay from the beginning
-5. **Save**: Use File → Save Project to store in localStorage
-6. **Export**: Use File → Export as JSON to download your story
-7. **View Stats**: Use Story → Story Statistics to see detailed analytics
-
-## Sample Ink Story
-
-The editor comes with a simple starter story. Here's a more complex example:
-
-```ink
-VAR player_name = "Hero"
-VAR health = 100
-
-=== start ===
-Welcome to the adventure, {player_name}!
-
-* [Explore the forest]
-    -> forest
-* [Enter the cave]
-    -> cave
-
-=== forest ===
-You venture into the dark forest.
-~ health = health - 10
-Your health is now {health}.
-
-* [Continue deeper]
-    -> forest_deep
-* [Return to start]
-    -> start
-
-=== forest_deep ===
-You found a treasure!
--> END
-
-=== cave ===
-The cave is cold and dark.
--> END
-```
-
 ## License
 
 See LICENSE file for details.
