@@ -55,8 +55,8 @@ const inkParser: StreamParser<{ afterInclude?: boolean }> = {
       return 'keyword';
     }
     
-    // Flow control
-    if (stream.match(/^(->|<-|->>|~)/)) {
+    // Flow control - check ->> before -> to match longest first
+    if (stream.match(/^(->>|->|<-|~)/)) {
       return 'operator';
     }
     
@@ -79,8 +79,8 @@ const inkParser: StreamParser<{ afterInclude?: boolean }> = {
       return 'keyword';
     }
     
-    // Gather markers
-    if (stream.match(/^-(?!>)/)) {
+    // Gather markers - match minus not followed by > or digits (to avoid matching negative numbers)
+    if (stream.match(/^-(?![>\d])/)) {
       return 'keyword';
     }
     

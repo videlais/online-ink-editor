@@ -35,7 +35,7 @@ export function resolveIncludes(files: InkFile[], mainFileId: string): ResolveRe
     // Match INCLUDE statements: INCLUDE filename.ink
     const includeRegex = /^\s*INCLUDE\s+([^\s]+)\s*$/gm;
     
-    return content.replace(includeRegex, (match, filename) => {
+    return content.replace(includeRegex, (_match, filename) => {
       const includedContent = fileMap.get(filename);
       
       if (!includedContent) {
