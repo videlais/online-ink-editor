@@ -6,7 +6,8 @@ async function setEditorContent(page: Page, content: string) {
     const editorElement = document.querySelector('.cm-content');
     if (editorElement) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const view = (editorElement as { cmView?: { view?: any } }).cmView?.view;
+      const tile = (editorElement as any).cmTile;
+      const view = tile?.root?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }
