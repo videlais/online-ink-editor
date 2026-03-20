@@ -3,11 +3,10 @@ import { test, expect, Page } from '@playwright/test';
 // Helper function to set editor content directly via EditorView
 async function setEditorContent(page: Page, content: string) {
   await page.evaluate((text) => {
-    const editorElement = document.querySelector('.cm-content');
-    if (editorElement) {
+    const cmContent = document.querySelector('.cm-content');
+    if (cmContent) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tile = (editorElement as any).cmTile;
-      const view = tile?.root?.view;
+      const view = (cmContent as any).cmTile?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }
@@ -15,7 +14,7 @@ async function setEditorContent(page: Page, content: string) {
       }
     }
   }, content);
-  await page.waitForTimeout(500); // Wait for recompilation
+  await page.waitForTimeout(600); // Wait for recompilation
 }
 
 test.describe('Save and Load Workflows', () => {

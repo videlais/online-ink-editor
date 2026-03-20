@@ -3,11 +3,10 @@ import { test, expect, Page } from '@playwright/test';
 // Helper function to set editor content directly via EditorView
 async function setEditorContent(page: Page, content: string) {
   await page.evaluate((text) => {
-    const editorElement = document.querySelector('.cm-content');
-    if (editorElement) {
+    const cmContent = document.querySelector('.cm-content');
+    if (cmContent) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tile = (editorElement as any).cmTile;
-      const view = tile?.root?.view;
+      const view = (cmContent as any).cmTile?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }
@@ -15,7 +14,7 @@ async function setEditorContent(page: Page, content: string) {
       }
     }
   }, content);
-  await page.waitForTimeout(500); // Wait for recompilation
+  await page.waitForTimeout(600); // Wait for recompilation
 }
 
 test.describe('Story Choices and Navigation', () => {
@@ -83,13 +82,8 @@ test.describe('Story Choices and Navigation', () => {
     await expect(choice).toBeVisible();
   });
 
-  test.fixme('should display multiple choices and select different paths', async ({ page }) => {
-    // TODO: Fix choice rendering - complex Ink story not compiling/rendering correctly
+  test('should display multiple choices and select different paths', async ({ page }) => {
     // Given: A story with multiple choices
-    const editor = page.locator('.cm-content');
-    await editor.click();
-    await page.keyboard.press('Control+A');
-    
     const inkStory = `Choose your character:
 * [Warrior]
   You are a mighty warrior!
@@ -101,8 +95,7 @@ test.describe('Story Choices and Navigation', () => {
   You are a sneaky rogue!
   -> END`;
     
-    await page.keyboard.type(inkStory.replace(/\n/g, '|||').split('|||').join('\n'));
-    await page.waitForTimeout(600);
+    await setEditorContent(page, inkStory);
     
     // When: All three choices are displayed
     const warriorChoice = page.locator('button:has-text("Warrior")');
@@ -125,13 +118,8 @@ test.describe('Story Choices and Navigation', () => {
     await expect(rogueChoice).not.toBeVisible();
   });
 
-  test.fixme('should handle sequential choices in a branching narrative', async ({ page }) => {
-    // TODO: Fix choice rendering - complex branching story not working
+  test('should handle sequential choices in a branching narrative', async ({ page }) => {
     // Given: A story with multiple sequential choices
-    const editor = page.locator('.cm-content');
-    await editor.click();
-    await page.keyboard.press('Control+A');
-    
     const inkStory = `You enter a dungeon.
 * [Open the door]
   The door creaks open.
@@ -142,11 +130,11 @@ test.describe('Story Choices and Navigation', () => {
      You charge through the door!
      -> END`;
     
-    await page.keyboard.type(inkStory.replace(/\n/g, '|||').split('|||').join('\n'));
-    await page.waitForTimeout(600);
+    await setEditorContent(page, inkStory);
     
     // When: User makes the first choice
     const firstChoice = page.locator('button:has-text("Open the door")');
+    await expect(firstChoice).toBeVisible();
     await firstChoice.click();
     
     const output = page.locator('.story-output');
@@ -166,30 +154,25 @@ test.describe('Story Choices and Navigation', () => {
     await expect(output).toContainText('You step inside carefully');
   });
 
-  test.fixme('should handle story completion (END)', async ({ page }) => {
-    // TODO: Fix timeout on choice click - story not advancing properly
+  test('should handle story completion (END)', async ({ page }) => {
     // Given: A story that ends
-    const editor = page.locator('.cm-content');
-    await editor.click();
-    await page.keyboard.press('Control+A');
-    
     const inkStory = `The story begins.
 * [Continue]
   The story ends here.
   -> END`;
     
-    await page.keyboard.type(inkStory.replace(/\n/g, '|||').split('|||').join('\n'));
-    await page.waitForTimeout(600);
+    await setEditorContent(page, inkStory);
     
     // When: User clicks the choice to end
     const choice = page.locator('button:has-text("Continue")');
+    await expect(choice).toBeVisible();
     await choice.click();
     
     // Then: Final text is shown and no more choices available
     const output = page.locator('.story-output');
     await expect(output).toContainText('The story ends here');
     
-    const choices = page.locator('.choice-buttons button');
-    await expect(choices).toHaveCount(0);
+    const choiceButtons = page.locator('.story-choices button');
+    await expect(choiceButtons).toHaveCount(0);
   });
 });

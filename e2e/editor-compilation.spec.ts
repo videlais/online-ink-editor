@@ -3,11 +3,10 @@ import { test, expect, Page } from '@playwright/test';
 // Helper function to set editor content directly via EditorView
 async function setEditorContent(page: Page, content: string) {
   await page.evaluate((text) => {
-    const editorElement = document.querySelector('.cm-content');
-    if (editorElement) {
+    const cmContent = document.querySelector('.cm-content');
+    if (cmContent) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tile = (editorElement as any).cmTile;
-      const view = tile?.root?.view;
+      const view = (cmContent as any).cmTile?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }
@@ -15,7 +14,7 @@ async function setEditorContent(page: Page, content: string) {
       }
     }
   }, content);
-  await page.waitForTimeout(500); // Wait for recompilation
+  await page.waitForTimeout(600); // Wait for recompilation
 }
 
 test.describe('Editor and Story Compilation', () => {
@@ -62,14 +61,16 @@ test.describe('Editor and Story Compilation', () => {
     await expect(choice2).toBeVisible();
   });
 
-  test.fixme('should display compilation errors for invalid Ink syntax', async ({ page }) => {
-    // TODO: Fix error display - compiler errors not being shown in UI
-    // Given: User enters invalid Ink syntax
-    await setEditorContent(page, 'This is invalid * [ broken syntax');
+  test('should display compilation errors for invalid Ink syntax', async ({ page }) => {
+    // Given: User enters invalid Ink syntax that causes a compilation error
+    await setEditorContent(page, '-> nonexistent_knot');
+    
+    // Wait for compilation
+    await page.waitForTimeout(1000);
     
     // Then: Error messages should be displayed
     const storyPane = page.locator('.story-pane');
-    await expect(storyPane).toContainText('Compilation');
+    await expect(storyPane).toContainText('Error', { timeout: 5000 });
   });
 
   test('should handle multi-line Ink story with variables', async ({ page }) => {

@@ -28,13 +28,15 @@ Object.defineProperty(window, 'localStorage', {
 describe('Feature: Ink Editor Application', () => {
   beforeEach(() => {
     localStorageMock.clear();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   describe('Scenario: User opens the application for the first time', () => {
     it('Given the user has never used the editor before, When the app loads, Then it should display the default Ink story', () => {
       render(<App />);
       
-      expect(screen.getByText('Ink Editor')).toBeInTheDocument();
+      expect(screen.getByText('Editor')).toBeInTheDocument();
       expect(screen.getByText('Story Preview')).toBeInTheDocument();
     });
 
@@ -166,7 +168,9 @@ describe('Feature: Ink Editor Application', () => {
   describe('Scenario: User saves and loads content', () => {
     it('Given the user has entered content, When they manually save, Then it should save to localStorage', async () => {
       const user = userEvent.setup();
-      localStorage.clear();
+      localStorageMock.clear();
+      // Suppress window.alert
+      vi.spyOn(window, 'alert').mockImplementation(() => {});
       
       render(<App />);
       
@@ -178,13 +182,14 @@ describe('Feature: Ink Editor Application', () => {
       await user.click(saveButton);
       
       // Verify content was saved (it should save the default Ink story)
-      const saved = localStorage.getItem('inkEditor_content');
+      const saved = localStorageMock.getItem('inkEditor_content');
       expect(saved).not.toBeNull();
       expect(saved).toBeTruthy();
     });
 
     it('Given content was previously saved, When the app reloads, Then it should restore the saved content', () => {
-      localStorage.setItem('inkEditor_content', 'Previously saved story');
+      const savedFiles = JSON.stringify([{ id: '1', name: 'main.ink', content: 'Previously saved story' }]);
+      localStorageMock.setItem('inkEditor_content', savedFiles);
       
       render(<App />);
       

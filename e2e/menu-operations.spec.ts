@@ -3,11 +3,10 @@ import { test, expect, Page } from '@playwright/test';
 // Helper function to set editor content directly via EditorView
 async function setEditorContent(page: Page, content: string) {
   await page.evaluate((text) => {
-    const editorElement = document.querySelector('.cm-content');
-    if (editorElement) {
+    const cmContent = document.querySelector('.cm-content');
+    if (cmContent) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tile = (editorElement as any).cmTile;
-      const view = tile?.root?.view;
+      const view = (cmContent as any).cmTile?.view;
       if (view) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: text }
@@ -15,7 +14,7 @@ async function setEditorContent(page: Page, content: string) {
       }
     }
   }, content);
-  await page.waitForTimeout(500); // Wait for recompilation
+  await page.waitForTimeout(600); // Wait for recompilation
 }
 
 test.describe('Menu Operations and Export', () => {
@@ -123,15 +122,13 @@ test.describe('Menu Operations and Export', () => {
     expect(newStyle).toContain('font-size: 110%');
   });
 
-  test.fixme('should zoom out and decrease font size', async ({ page }) => {
-    // TODO: Fix menu interaction timeout issue
+  test('should zoom out and decrease font size', async ({ page }) => {
     // Given: The app is zoomed in
     const viewMenu = page.locator('button:has-text("View")').first();
     await viewMenu.click();
     
     const zoomInButton = page.locator('button:has-text("Zoom In")');
     await zoomInButton.click();
-    await viewMenu.click(); // Close menu
     
     // When: User clicks View > Zoom Out
     await viewMenu.click();
@@ -144,8 +141,7 @@ test.describe('Menu Operations and Export', () => {
     expect(style).toContain('font-size: 100%');
   });
 
-  test.fixme('should display story statistics modal', async ({ page }) => {
-    // TODO: Fix modal visibility - selector may be incorrect or timing issue
+  test('should display story statistics modal', async ({ page }) => {
     // Given: A story is loaded with content
     await page.waitForTimeout(600); // Wait for default story to compile
     
@@ -157,68 +153,62 @@ test.describe('Menu Operations and Export', () => {
     await statsButton.click();
     
     // Then: Stats modal should be visible
-    const modal = page.locator('.stats-modal');
+    const modal = page.locator('.modal-overlay');
     await expect(modal).toBeVisible();
     
     // Verify stats are displayed
-    await expect(modal).toContainText('Story Statistics');
-    await expect(modal).toContainText('Words:');
-    await expect(modal).toContainText('Knots:');
+    const modalContent = page.locator('.modal-content');
+    await expect(modalContent).toContainText('Story Statistics');
+    await expect(modalContent).toContainText('Word Count');
     
     // Close modal
-    const closeButton = modal.locator('button:has-text("Close")');
+    const closeButton = modalContent.locator('button[aria-label="Close statistics modal"]');
     await closeButton.click();
     await expect(modal).not.toBeVisible();
   });
 
-  test.fixme('should export story as JSON', async ({ page }) => {
-    // TODO: Fix download handling - need proper download event configuration
+  test('should export story as JSON', async ({ page }) => {
     // Given: User has a story
-    const testStory = 'Test story for export.';
+    const testStory = 'Test story for export.\n* [choice]\n  -> END';
     await setEditorContent(page, testStory);
     
     await page.waitForTimeout(700); // Wait for compile
     
-    // When: User clicks File > Export JSON
+    // When: User clicks File > Export as JSON
     const fileMenu = page.locator('button:has-text("File")').first();
     await fileMenu.click();
     
     // Setup download handler
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
     
-    const exportButton = page.locator('button:has-text("Export JSON")');
+    const exportButton = page.locator('button:has-text("Export as JSON")');
     await exportButton.click();
     
     // Then: File should be downloaded
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe('story.json');
-    
-    // Verify the downloaded content
-    const path = await download.path();
-    expect(path).toBeTruthy();
+    expect(download.suggestedFilename()).toMatch(/^ink-story-\d+\.json$/);
   });
 
-  test.fixme('should export story as Ink file', async ({ page }) => {
-    // TODO: Fix download handling - need proper download event configuration
+  test('should export story as Ink file', async ({ page }) => {
     // Given: User has a story
-    const testStory = 'Test Ink story for file export.';
+    const testStory = 'Test Ink story for file export.\n* [choice]\n  -> END';
     await setEditorContent(page, testStory);
     
     await page.waitForTimeout(700); // Wait for compile
     
-    // When: User clicks File > Save as .ink
+    // When: User clicks File > Save as Ink
     const fileMenu = page.locator('button:has-text("File")').first();
     await fileMenu.click();
     
     // Setup download handler
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
     
-    const saveInkButton = page.locator('button:has-text("Save as .ink")');
+    const saveInkButton = page.locator('button:has-text("Save as Ink")');
     await saveInkButton.click();
     
     // Then: Ink file should be downloaded
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe('story.ink');
+    expect(download.suggestedFilename()).toMatch(/^story-\d+\.ink$/);
   });
 
   test('should restart story from menu', async ({ page }) => {

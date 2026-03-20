@@ -30,8 +30,19 @@ function App() {
     if (saved) {
       try {
         const parsedFiles = JSON.parse(saved);
-        if (Array.isArray(parsedFiles) && parsedFiles.length > 0) {
-          return parsedFiles;
+        if (
+          Array.isArray(parsedFiles) &&
+          parsedFiles.length > 0 &&
+          parsedFiles.every(
+            (f: unknown) =>
+              f !== null &&
+              typeof f === 'object' &&
+              typeof (f as Record<string, unknown>).id === 'string' &&
+              typeof (f as Record<string, unknown>).name === 'string' &&
+              typeof (f as Record<string, unknown>).content === 'string'
+          )
+        ) {
+          return parsedFiles as InkFile[];
         }
       } catch {
         // Fall through to default
@@ -279,13 +290,16 @@ function App() {
   const handleSaveAsInk = () => {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `story-${Date.now()}.ink`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `story-${Date.now()}.ink`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleLoadInk = () => {
@@ -296,6 +310,11 @@ function App() {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
       if (file) {
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+        if (file.size > MAX_FILE_SIZE) {
+          alert('File is too large. Maximum file size is 5 MB.');
+          return;
+        }
         file.text().then((fileContent) => {
           const newFile: InkFile = {
             id: Date.now().toString(),
