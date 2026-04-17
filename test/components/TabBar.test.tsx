@@ -252,5 +252,40 @@ describe('Feature: File Tabs Management', () => {
 
       vi.unstubAllGlobals();
     });
+
+    it('Given no onSetMainFile prop, When tab is right-clicked, Then nothing should happen', () => {
+      const propsWithoutSetMain = {
+        ...defaultProps,
+        onSetMainFile: undefined,
+      };
+
+      render(<TabBar {...propsWithoutSetMain} />);
+
+      const tab = screen.getByText('chapter1.ink').parentElement;
+      fireEvent.contextMenu(tab!);
+
+      // No error, no call
+      expect(mockOnSetMainFile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Scenario: Tab click when already editing', () => {
+    it('Given a tab is already being edited, When clicked again, Then it should not reset the edit state', async () => {
+      const user = userEvent.setup();
+      render(<TabBar {...defaultProps} />);
+
+      // Click to start editing
+      const tab = screen.getByText('main.ink').parentElement;
+      fireEvent.click(tab!);
+
+      const input = screen.getByLabelText('Rename file') as HTMLInputElement;
+      expect(input).toBeInTheDocument();
+
+      // Click the same tab again (while editing)
+      fireEvent.click(tab!);
+
+      // Should still be in edit mode
+      expect(screen.getByLabelText('Rename file')).toBeInTheDocument();
+    });
   });
 });

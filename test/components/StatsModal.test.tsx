@@ -240,4 +240,39 @@ describe('Feature: Story Statistics Modal', () => {
       expect(firstElement).toHaveFocus();
     });
   });
+
+  describe('Scenario: Focus restoration on close', () => {
+    it('Given a button triggered the modal, When modal closes, Then focus should return to that button', () => {
+      const triggerButton = document.createElement('button');
+      triggerButton.textContent = 'Open Stats';
+      document.body.appendChild(triggerButton);
+      triggerButton.focus();
+      expect(triggerButton).toHaveFocus();
+
+      const { unmount } = render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockOnClose} />);
+
+      // Close button should now have focus
+      const closeButton = screen.getByRole('button', { name: /close statistics modal/i });
+      expect(closeButton).toHaveFocus();
+
+      // Unmount to trigger cleanup
+      unmount();
+
+      // Focus should return to the trigger button
+      expect(triggerButton).toHaveFocus();
+
+      document.body.removeChild(triggerButton);
+    });
+  });
+
+  describe('Scenario: Non-special keys in modal', () => {
+    it('Given the modal is open, When a regular key is pressed, Then nothing should happen', () => {
+      render(<StatsModal stats={sampleStats} variables={sampleVariables} onClose={mockOnClose} />);
+
+      fireEvent.keyDown(document, { key: 'a' });
+
+      // Modal should still be open, onClose not called for regular keys
+      expect(screen.getByText('Story Statistics')).toBeInTheDocument();
+    });
+  });
 });

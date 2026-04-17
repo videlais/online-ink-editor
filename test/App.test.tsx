@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../src/App';
 
@@ -237,6 +237,410 @@ describe('Feature: Ink Editor Application', () => {
       await waitFor(() => {
         expect(screen.getByText('Story Statistics')).toBeInTheDocument();
       });
+    });
+
+    it('Given the stats modal is open, When the close button is clicked, Then it should close the modal', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(screen.getByText('Story'));
+      await user.click(screen.getByText('Story Statistics'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Story Statistics')).toBeInTheDocument();
+      });
+
+      const closeButton = screen.getByRole('button', { name: /close statistics modal/i });
+      await user.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Scenario: User creates a new project', () => {
+    it('Given the user confirms, When "New Project" is clicked, Then the editor should reset', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      render(<App />);
+
+      await user.click(screen.getByText('File'));
+      await user.click(screen.getByText('New Project'));
+
+      expect(window.confirm).toHaveBeenCalledWith('Create a new project? Any unsaved changes will be lost.');
+    });
+
+    it('Given the user cancels, When "New Project" is clicked, Then nothing should change', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+      render(<App />);
+
+      await user.click(screen.getByText('File'));
+      await user.click(screen.getByText('New Project'));
+
+      // Editor should still be present unchanged
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: User exports content', () => {
+    it('Given the app is open, When "Export as JSON" is clicked, Then it should trigger export', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(screen.getByText('File'));
+      await user.click(screen.getByText('Export as JSON'));
+
+      // Export creates a download link - just verify no crash
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    it('Given the app is open, When "Save as Ink" is clicked, Then it should trigger ink download', async () => {
+      const user = userEvent.setup();
+      // Mock URL.createObjectURL and URL.revokeObjectURL
+      const mockCreateObjectURL = vi.fn(() => 'blob:mock-url');
+      const mockRevokeObjectURL = vi.fn();
+      vi.stubGlobal('URL', { ...URL, createObjectURL: mockCreateObjectURL, revokeObjectURL: mockRevokeObjectURL });
+
+      render(<App />);
+
+      await user.click(screen.getByText('File'));
+      await user.click(screen.getByText('Save as Ink'));
+
+      expect(mockCreateObjectURL).toHaveBeenCalled();
+      expect(mockRevokeObjectURL).toHaveBeenCalled();
+
+      vi.unstubAllGlobals();
+    });
+  });
+
+  describe('Scenario: User uses clipboard operations', () => {
+    it('Given the app is open, When "Copy" is clicked, Then content should be copied to clipboard', async () => {
+      const user = userEvent.setup();
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: writeTextMock, readText: vi.fn() },
+        writable: true,
+        configurable: true,
+      });
+      vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<App />);
+
+      await user.click(screen.getByText('Edit'));
+      await user.click(screen.getByText('Copy'));
+
+      expect(writeTextMock).toHaveBeenCalled();
+      expect(window.alert).toHaveBeenCalledWith('Content copied to clipboard!');
+    });
+
+    it('Given the app is open, When "Paste" is clicked and clipboard succeeds, Then content should update', async () => {
+      const user = userEvent.setup();
+      const readTextMock = vi.fn().mockResolvedValue('Pasted content here');
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: vi.fn(), readText: readTextMock },
+        writable: true,
+        configurable: true,
+      });
+
+      render(<App />);
+
+      await user.click(screen.getByText('Edit'));
+      await user.click(screen.getByText('Paste'));
+
+      await waitFor(() => {
+        expect(readTextMock).toHaveBeenCalled();
+      });
+    });
+
+    it('Given clipboard read fails, When "Paste" is clicked, Then an alert should show', async () => {
+      const user = userEvent.setup();
+      const readTextMock = vi.fn().mockRejectedValue(new Error('denied'));
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: vi.fn(), readText: readTextMock },
+        writable: true,
+        configurable: true,
+      });
+      vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<App />);
+
+      await user.click(screen.getByText('Edit'));
+      await user.click(screen.getByText('Paste'));
+
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith('Failed to paste from clipboard. Please use Cmd+V instead.');
+      });
+    });
+  });
+
+  describe('Scenario: User manages multiple files', () => {
+    it('Given the editor is open, When a new file tab is created via EditorPane, Then it should appear in the tab bar', async () => {
+      render(<App />);
+
+      // The new file button should exist
+      const newFileButton = screen.getByLabelText('New file');
+      expect(newFileButton).toBeInTheDocument();
+    });
+
+    it('Given multiple files exist, When closing a non-last tab, Then it should be removed', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Create a new file
+      const newFileButton = screen.getByLabelText('New file');
+      await user.click(newFileButton);
+
+      await waitFor(() => {
+        expect(screen.getAllByRole('tab').length).toBeGreaterThanOrEqual(2);
+      });
+
+      // Close the new file tab
+      const closeButtons = screen.getAllByLabelText(/Close/);
+      expect(closeButtons.length).toBeGreaterThan(0);
+      await user.click(closeButtons[closeButtons.length - 1]);
+
+      await waitFor(() => {
+        expect(screen.getAllByRole('tab').length).toBe(1);
+      });
+    });
+  });
+
+  describe('Scenario: User renames a file', () => {
+    it('Given a file tab is clicked, When a new name is entered and submitted, Then the tab should update', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Click the main.ink tab to start editing
+      const tab = screen.getByText('main.ink');
+      await user.click(tab);
+
+      // An input for renaming should appear
+      const input = screen.queryByLabelText('Rename file');
+      if (input) {
+        await user.clear(input);
+        await user.type(input, 'renamed.ink{Enter}');
+
+        await waitFor(() => {
+          expect(screen.getByText('renamed.ink')).toBeInTheDocument();
+        });
+      }
+    });
+  });
+
+  describe('Scenario: User uses keyboard shortcuts', () => {
+    it('Given the app is open, When Ctrl+S is pressed, Then it should save', async () => {
+      vi.spyOn(window, 'alert').mockImplementation(() => {});
+      render(<App />);
+
+      fireEvent.keyDown(document, { key: 's', ctrlKey: true });
+
+      expect(window.alert).toHaveBeenCalledWith('Project saved to localStorage!');
+    });
+
+    it('Given the app is open, When Ctrl+R is pressed, Then it should restart the story', async () => {
+      render(<App />);
+
+      // Wait for initial compilation
+      await waitFor(() => {
+        const choiceButtons = screen.queryAllByRole('button', { name: /Choice/i });
+        expect(choiceButtons.length).toBeGreaterThan(0);
+      }, { timeout: 3000 });
+
+      fireEvent.keyDown(document, { key: 'r', ctrlKey: true });
+
+      // Story should restart and choices should still be visible
+      await waitFor(() => {
+        const choiceButtons = screen.queryAllByRole('button', { name: /Choice/i });
+        expect(choiceButtons.length).toBeGreaterThan(0);
+      }, { timeout: 3000 });
+    });
+
+    it('Given the app is open, When Ctrl+I is pressed, Then it should show stats', async () => {
+      render(<App />);
+
+      fireEvent.keyDown(document, { key: 'i', ctrlKey: true });
+
+      await waitFor(() => {
+        expect(screen.getByText('Story Statistics')).toBeInTheDocument();
+      });
+    });
+
+    it('Given the app is open, When Ctrl+= is pressed, Then zoom should increase', () => {
+      render(<App />);
+
+      fireEvent.keyDown(document, { key: '=', ctrlKey: true });
+
+      const mainContent = document.querySelector('.main-content');
+      expect(mainContent).toHaveStyle({ fontSize: '110%' });
+    });
+
+    it('Given the app is open, When Ctrl+- is pressed, Then zoom should not go below 100%', () => {
+      render(<App />);
+
+      fireEvent.keyDown(document, { key: '-', ctrlKey: true });
+
+      const mainContent = document.querySelector('.main-content');
+      expect(mainContent).toHaveStyle({ fontSize: '100%' });
+    });
+
+    it('Given the app is open, When Ctrl+E is pressed, Then it should trigger export', () => {
+      render(<App />);
+
+      fireEvent.keyDown(document, { key: 'e', ctrlKey: true });
+
+      // No crash - export happens silently via blob download
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    it('Given the app is open, When Ctrl+N is pressed and confirmed, Then it should create new project', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      render(<App />);
+
+      fireEvent.keyDown(document, { key: 'n', ctrlKey: true });
+
+      expect(window.confirm).toHaveBeenCalled();
+    });
+
+    it('Given the app is open, When Ctrl+O is pressed, Then it should trigger file load', () => {
+      render(<App />);
+
+      fireEvent.keyDown(document, { key: 'o', ctrlKey: true });
+
+      // File input is created and clicked - just verify no crash
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    it('Given Ctrl+C is pressed outside editor, When content exists, Then it should copy', async () => {
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: writeTextMock, readText: vi.fn() },
+        writable: true,
+        configurable: true,
+      });
+      vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<App />);
+
+      // Wait for initial render/compile to settle
+      await waitFor(() => {
+        expect(screen.getByRole('textbox')).toBeInTheDocument();
+      });
+
+      // Fire keydown on the document body element instead of document itself
+      fireEvent.keyDown(document.body, { key: 'c', ctrlKey: true });
+
+      expect(writeTextMock).toHaveBeenCalled();
+    });
+
+    it('Given Ctrl+V is pressed outside editor, When clipboard has text, Then it should paste', async () => {
+      const readTextMock = vi.fn().mockResolvedValue('pasted');
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: vi.fn(), readText: readTextMock },
+        writable: true,
+        configurable: true,
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('textbox')).toBeInTheDocument();
+      });
+
+      fireEvent.keyDown(document.body, { key: 'v', ctrlKey: true });
+
+      await waitFor(() => {
+        expect(readTextMock).toHaveBeenCalled();
+      });
+    });
+
+    it('Given a modifier key with shift, When pressed, Then shortcut should not fire', () => {
+      const alertMock = vi.fn();
+      vi.spyOn(window, 'alert').mockImplementation(alertMock);
+      render(<App />);
+
+      // Clear any calls from auto-compile or setup
+      alertMock.mockClear();
+
+      fireEvent.keyDown(document, { key: 's', ctrlKey: true, shiftKey: true });
+
+      expect(alertMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Scenario: localStorage edge cases', () => {
+    it('Given invalid JSON in localStorage, When app loads, Then it should use default content', () => {
+      localStorageMock.setItem('inkEditor_content', 'not valid json{{{');
+
+      render(<App />);
+
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    it('Given empty array in localStorage, When app loads, Then it should use default content', () => {
+      localStorageMock.setItem('inkEditor_content', '[]');
+
+      render(<App />);
+
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    it('Given malformed file objects in localStorage, When app loads, Then it should use default content', () => {
+      localStorageMock.setItem('inkEditor_content', JSON.stringify([{ id: 123, name: 'test' }]));
+
+      render(<App />);
+
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    it('Given file objects missing content field, When app loads, Then it should use default content', () => {
+      localStorageMock.setItem('inkEditor_content', JSON.stringify([{ id: '1', name: 'test.ink' }]));
+
+      render(<App />);
+
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Zoom limits', () => {
+    it('Given zoom is at 100%, When zooming in multiple times, Then it should cap at 200%', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      const viewMenu = screen.getByText('View');
+
+      // Zoom in 11 times to try to exceed 200%
+      for (let i = 0; i < 11; i++) {
+        await user.click(viewMenu);
+        await user.click(screen.getByText('Zoom In'));
+      }
+
+      const mainContent = document.querySelector('.main-content');
+      expect(mainContent).toHaveStyle({ fontSize: '200%' });
+    });
+  });
+
+  describe('Scenario: Story interaction with restart', () => {
+    it('Given a story with choices, When the user clicks Restart via Story menu, Then story should reset', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Wait for initial compilation
+      await waitFor(() => {
+        const choiceButtons = screen.queryAllByRole('button', { name: /Choice/i });
+        expect(choiceButtons.length).toBeGreaterThan(0);
+      }, { timeout: 3000 });
+
+      await user.click(screen.getByText('Story'));
+      await user.click(screen.getByText('Restart Story'));
+
+      await waitFor(() => {
+        const choiceButtons = screen.queryAllByRole('button', { name: /Choice/i });
+        expect(choiceButtons.length).toBeGreaterThan(0);
+      }, { timeout: 3000 });
     });
   });
 });

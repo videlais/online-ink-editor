@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MenuBar } from '../../src/components/MenuBar';
 
@@ -390,6 +390,140 @@ describe('Feature: Menu Bar Component', () => {
       
       await user.keyboard('{Escape}');
       expect(screen.queryByText('Restart Story')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Scenario: Escape key on individual dropdown menu items', () => {
+    it('Given File > New Project is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('File'));
+      const newProjectButton = screen.getByText('New Project').closest('button')!;
+      fireEvent.keyDown(newProjectButton, { key: 'Escape' });
+
+      expect(screen.queryByText('New Project')).not.toBeInTheDocument();
+    });
+
+    it('Given File > Load Ink File is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('File'));
+      const loadButton = screen.getByText('Load Ink File').closest('button')!;
+      fireEvent.keyDown(loadButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Load Ink File')).not.toBeInTheDocument();
+    });
+
+    it('Given File > Save Project is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('File'));
+      const saveButton = screen.getByText('Save Project').closest('button')!;
+      fireEvent.keyDown(saveButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Save Project')).not.toBeInTheDocument();
+    });
+
+    it('Given File > Save as Ink is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('File'));
+      const saveAsButton = screen.getByText('Save as Ink').closest('button')!;
+      fireEvent.keyDown(saveAsButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Save as Ink')).not.toBeInTheDocument();
+    });
+
+    it('Given File > Export as JSON is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('File'));
+      const exportButton = screen.getByText('Export as JSON').closest('button')!;
+      fireEvent.keyDown(exportButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Export as JSON')).not.toBeInTheDocument();
+    });
+
+    it('Given Edit > Copy is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('Edit'));
+      const copyButton = screen.getByText('Copy').closest('button')!;
+      fireEvent.keyDown(copyButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Copy')).not.toBeInTheDocument();
+    });
+
+    it('Given Edit > Paste is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('Edit'));
+      const pasteButton = screen.getByText('Paste').closest('button')!;
+      fireEvent.keyDown(pasteButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Paste')).not.toBeInTheDocument();
+    });
+
+    it('Given Story > Restart is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('Story'));
+      const restartButton = screen.getByText('Restart Story').closest('button')!;
+      fireEvent.keyDown(restartButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Restart Story')).not.toBeInTheDocument();
+    });
+
+    it('Given Story > Statistics is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('Story'));
+      const statsButton = screen.getByText('Story Statistics').closest('button')!;
+      fireEvent.keyDown(statsButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Story Statistics')).not.toBeInTheDocument();
+    });
+
+    it('Given View > Zoom In is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('View'));
+      const zoomInButton = screen.getByText('Zoom In').closest('button')!;
+      fireEvent.keyDown(zoomInButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Zoom In')).not.toBeInTheDocument();
+    });
+
+    it('Given View > Zoom Out is focused, When Escape is pressed on the item, Then menu should close', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('View'));
+      const zoomOutButton = screen.getByText('Zoom Out').closest('button')!;
+      fireEvent.keyDown(zoomOutButton, { key: 'Escape' });
+
+      expect(screen.queryByText('Zoom Out')).not.toBeInTheDocument();
+    });
+
+    it('Given a menu item is focused, When a non-Escape key is pressed, Then menu should stay open', async () => {
+      const user = userEvent.setup();
+      render(<MenuBar {...defaultProps} />);
+
+      await user.click(screen.getByText('File'));
+      const newProjectButton = screen.getByText('New Project').closest('button')!;
+      fireEvent.keyDown(newProjectButton, { key: 'ArrowUp' });
+
+      expect(screen.getByText('New Project')).toBeInTheDocument();
     });
   });
 });
