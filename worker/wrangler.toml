@@ -1,0 +1,22 @@
+name = "online-ink-editor-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# KV namespace binding
+# Create with: npx wrangler kv namespace create PROJECTS
+# Then paste the id below and uncomment.
+# For local dev: npx wrangler kv namespace create PROJECTS --preview
+# Then paste the preview_id below and uncomment.
+[[kv_namespaces]]
+binding = "PROJECTS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_KV_NAMESPACE_PREVIEW_ID"
+
+[vars]
+# Maximum size of a project payload in bytes (1MB)
+MAX_PROJECT_SIZE = "1048576"
+
+# Cloudflare Pages serves the SPA; the Worker handles /api/* routes.
+# In Pages dashboard, set the "Functions" route to this Worker.
+# Alternatively, deploy as a standalone Worker with a custom domain.

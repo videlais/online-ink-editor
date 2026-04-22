@@ -15,7 +15,10 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "all": "npm run lint && npm run test:coverage && npm run test:e2e && npm run build && npm run docs:build"
+    "all": "npm run lint && npm run test:coverage && npm run test:e2e && npm run build && npm run docs:build",
+    "worker:dev": "cd worker && npm run dev",
+    "worker:deploy": "cd worker && npm run deploy",
+    "worker:install": "cd worker && npm install"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
