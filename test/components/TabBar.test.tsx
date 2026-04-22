@@ -271,7 +271,6 @@ describe('Feature: File Tabs Management', () => {
 
   describe('Scenario: Tab click when already editing', () => {
     it('Given a tab is already being edited, When clicked again, Then it should not reset the edit state', async () => {
-      const user = userEvent.setup();
       render(<TabBar {...defaultProps} />);
 
       // Click to start editing
