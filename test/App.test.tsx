@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../src/App';
+import * as inkUtils from '../src/utils/inkUtils';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -30,6 +31,10 @@ describe('Feature: Ink Editor Application', () => {
     localStorageMock.clear();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Scenario: User opens the application for the first time', () => {
@@ -289,13 +294,14 @@ describe('Feature: Ink Editor Application', () => {
   describe('Scenario: User exports content', () => {
     it('Given the app is open, When "Export as JSON" is clicked, Then it should trigger export', async () => {
       const user = userEvent.setup();
+      const exportSpy = vi.spyOn(inkUtils, 'exportAsJSON').mockImplementation(() => {});
       render(<App />);
 
       await user.click(screen.getByText('File'));
       await user.click(screen.getByText('Export as JSON'));
 
-      // Export creates a download link - just verify no crash
-      expect(screen.getByRole('textbox')).toBeInTheDocument();
+      expect(exportSpy).toHaveBeenCalledTimes(1);
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it('Given the app is open, When "Save as Ink" is clicked, Then it should trigger ink download', async () => {
@@ -304,14 +310,17 @@ describe('Feature: Ink Editor Application', () => {
       const mockCreateObjectURL = vi.fn(() => 'blob:mock-url');
       const mockRevokeObjectURL = vi.fn();
       vi.stubGlobal('URL', { ...URL, createObjectURL: mockCreateObjectURL, revokeObjectURL: mockRevokeObjectURL });
+      const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
       render(<App />);
 
       await user.click(screen.getByText('File'));
       await user.click(screen.getByText('Save as Ink'));
 
+      expect(clickSpy).toHaveBeenCalledTimes(1);
       expect(mockCreateObjectURL).toHaveBeenCalled();
       expect(mockRevokeObjectURL).toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
 
       vi.unstubAllGlobals();
     });
@@ -488,12 +497,13 @@ describe('Feature: Ink Editor Application', () => {
     });
 
     it('Given the app is open, When Ctrl+E is pressed, Then it should trigger export', () => {
+      const exportSpy = vi.spyOn(inkUtils, 'exportAsJSON').mockImplementation(() => {});
       render(<App />);
 
       fireEvent.keyDown(document, { key: 'e', ctrlKey: true });
 
-      // No crash - export happens silently via blob download
-      expect(screen.getByRole('textbox')).toBeInTheDocument();
+      expect(exportSpy).toHaveBeenCalledTimes(1);
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it('Given the app is open, When Ctrl+N is pressed and confirmed, Then it should create new project', () => {

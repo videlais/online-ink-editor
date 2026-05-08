@@ -211,6 +211,30 @@ test.describe('Menu Operations and Export', () => {
     expect(download.suggestedFilename()).toMatch(/^story-\d+\.ink$/);
   });
 
+  test('should handle repeated JSON and Ink exports without regression', async ({ page }) => {
+    // Given: User has story content ready for export
+    const testStory = 'Repeated export regression story.\n* [continue]\n  -> END';
+    await setEditorContent(page, testStory);
+    await page.waitForTimeout(700);
+
+    // When/Then: Run repeated export cycles for both JSON and Ink
+    for (let i = 0; i < 2; i++) {
+      const fileMenu = page.locator('button:has-text("File")').first();
+
+      await fileMenu.click();
+      const jsonDownloadPromise = page.waitForEvent('download', { timeout: 10000 });
+      await page.locator('button:has-text("Export as JSON")').click();
+      const jsonDownload = await jsonDownloadPromise;
+      expect(jsonDownload.suggestedFilename()).toMatch(/^ink-story-\d+\.json$/);
+
+      await fileMenu.click();
+      const inkDownloadPromise = page.waitForEvent('download', { timeout: 10000 });
+      await page.locator('button:has-text("Save as Ink")').click();
+      const inkDownload = await inkDownloadPromise;
+      expect(inkDownload.suggestedFilename()).toMatch(/^story-\d+\.ink$/);
+    }
+  });
+
   test('should restart story from menu', async ({ page }) => {
     // Given: A story is running
     const storyContent = `Start of story.

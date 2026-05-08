@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useInkCompiler } from '../../src/hooks/useInkCompiler';
+import * as inkUtils from '../../src/utils/inkUtils';
 
 describe('useInkCompiler', () => {
   beforeEach(() => {
@@ -73,17 +74,17 @@ describe('useInkCompiler', () => {
   });
 
   describe('Scenario: handleExport', () => {
-    it('When handleExport is called, Then exportAsJSON is invoked', async () => {
+    it('When handleExport is called, Then exportAsJSON is invoked with current content', async () => {
+      const exportSpy = vi.spyOn(inkUtils, 'exportAsJSON').mockImplementation(() => {});
       const { result } = renderHook(() => useInkCompiler(validInk, []));
       await act(async () => { vi.advanceTimersByTime(500); });
       expect(result.current.isRunning).toBe(true);
 
-      // exportAsJSON will throw in jsdom (no Blob download), but that's fine
-      try {
-        act(() => { result.current.handleExport(); });
-      } catch {
-        // expected in jsdom
-      }
+      act(() => { result.current.handleExport(); });
+
+      expect(exportSpy).toHaveBeenCalledWith(validInk);
+      expect(exportSpy).toHaveBeenCalledTimes(1);
+      expect(console.error).not.toHaveBeenCalled();
     });
   });
 
