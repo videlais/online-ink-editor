@@ -235,4 +235,94 @@ describe('useFileManager', () => {
       expect(saved[0].content).toBe('new content');
     });
   });
+
+  describe('Scenario: handleLoadInk', () => {
+    let capturedInput: HTMLInputElement;
+
+    beforeEach(() => {
+      const origCreate = document.createElement.bind(document);
+      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+        if (tag === 'input') {
+          capturedInput = origCreate('input') as HTMLInputElement;
+          capturedInput.click = vi.fn();
+          return capturedInput;
+        }
+        return origCreate(tag);
+      });
+    });
+
+    it('When a valid file is selected, Then it is added to files and becomes active', async () => {
+      const { result } = renderHook(() => useFileManager());
+      act(() => result.current.handleLoadInk());
+
+      const mockFile = {
+        name: 'chapter1.ink',
+        size: 100,
+        text: vi.fn().mockResolvedValue('// Chapter 1'),
+      };
+
+      await act(async () => {
+        Object.defineProperty(capturedInput, 'files', { value: [mockFile], configurable: true });
+        capturedInput.dispatchEvent(new Event('change'));
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(result.current.files).toHaveLength(2);
+      expect(result.current.files[1].name).toBe('chapter1.ink');
+      expect(result.current.files[1].content).toBe('// Chapter 1');
+      expect(result.current.activeFileId).toBe(result.current.files[1].id);
+    });
+
+    it('When the selected file exceeds 5 MB, Then an alert is shown and no file is added', () => {
+      const { result } = renderHook(() => useFileManager());
+      act(() => result.current.handleLoadInk());
+
+      const mockFile = {
+        name: 'big.ink',
+        size: 6 * 1024 * 1024,
+        text: vi.fn(),
+      };
+
+      act(() => {
+        Object.defineProperty(capturedInput, 'files', { value: [mockFile], configurable: true });
+        capturedInput.dispatchEvent(new Event('change'));
+      });
+
+      expect(window.alert).toHaveBeenCalledWith('File is too large. Maximum file size is 5 MB.');
+      expect(mockFile.text).not.toHaveBeenCalled();
+      expect(result.current.files).toHaveLength(1);
+    });
+
+    it('When file.text() rejects, Then console.error and an alert are shown', async () => {
+      const { result } = renderHook(() => useFileManager());
+      act(() => result.current.handleLoadInk());
+
+      const readError = new Error('read error');
+      const mockFile = {
+        name: 'broken.ink',
+        size: 100,
+        text: vi.fn().mockRejectedValue(readError),
+      };
+
+      await act(async () => {
+        Object.defineProperty(capturedInput, 'files', { value: [mockFile], configurable: true });
+        capturedInput.dispatchEvent(new Event('change'));
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(console.error).toHaveBeenCalledWith('Failed to read file:', readError);
+      expect(window.alert).toHaveBeenCalledWith('Failed to read the selected file.');
+    });
+
+    it('When onchange fires with no file selected, Then files remain unchanged', () => {
+      const { result } = renderHook(() => useFileManager());
+      act(() => result.current.handleLoadInk());
+
+      act(() => {
+        capturedInput.dispatchEvent(new Event('change'));
+      });
+
+      expect(result.current.files).toHaveLength(1);
+    });
+  });
 });
