@@ -1,44 +1,8 @@
-# Online Ink Editor
+# Online ink Editor
 
-A web-based editor for creating and testing [ink](https://www.inklestudios.com/ink/) interactive narrative stories. This editor provides a split-pane interface with real-time compilation and preview.
+A web-based editor for creating and testing the narrative scripting language [ink](https://github.com/inkle/ink). This editor provides a split-pane interface with real-time compilation and preview similar to the desktop tool [Inky](https://www.inklestudios.com/ink/) but as a web-based interface.
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v16 or higher)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd online-ink-editor
-```
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-1. Start the development server:
-
-```bash
-npm run dev
-```
-
-1. Open your browser to `http://localhost:5173`
-
-### Building for Production
-
-```bash
-npm run build
-```
-
-The built files will be in the `dist/` directory.
+It can be accessed [directly on GitHub Pages](https://github.com/inkle/ink).
 
 ## License
 
