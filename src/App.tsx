@@ -13,6 +13,7 @@ import './App.css';
 function App() {
   const [showStats, setShowStats] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [autoCompile, setAutoCompile] = useState(true);
 
   const {
     files,
@@ -33,18 +34,23 @@ function App() {
 
   const { content, errors: includeErrors } = resolveIncludes(files, mainFileId);
 
+  const handleToggleAutoCompile = useCallback(() => {
+    setAutoCompile(prev => !prev);
+  }, []);
+
   const {
     output,
     choices,
     errors,
     isRunning,
+    isEnded,
     stats,
     variables,
     handleChoice,
     handleRestart,
     handleExport,
     handleCopy,
-  } = useInkCompiler(content, includeErrors);
+  } = useInkCompiler(content, includeErrors, autoCompile);
 
   const handleShowStats = useCallback(() => {
     setShowStats(true);
@@ -116,8 +122,11 @@ function App() {
                 choices={choices}
                 errors={errors}
                 isRunning={isRunning}
+                isEnded={isEnded}
+                autoCompile={autoCompile}
                 onRestart={handleRestart}
                 onChoice={handleChoice}
+                onToggleAutoCompile={handleToggleAutoCompile}
               />
             </div>
           }

@@ -23,6 +23,12 @@
   font-weight: 600;
 }
 
+.story-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .restart-button {
   background-color: #007acc;
   color: white;
@@ -36,6 +42,43 @@
 
 .restart-button:hover {
   background-color: #005a9e;
+}
+
+.auto-compile-toggle {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.857em;
+  transition: background-color 0.2s;
+}
+
+.auto-compile-toggle--on {
+  background-color: #007acc;
+  color: white;
+}
+
+.auto-compile-toggle--on:hover {
+  background-color: #005a9e;
+}
+
+.auto-compile-toggle--off {
+  background-color: #555;
+  color: #ccc;
+}
+
+.auto-compile-toggle--off:hover {
+  background-color: #666;
+}
+
+.story-ended {
+  margin: 16px 0 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #444;
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  font-size: 0.9em;
 }
 
 .story-content {

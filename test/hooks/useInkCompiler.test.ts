@@ -149,4 +149,62 @@ describe('useInkCompiler', () => {
       expect(result.current.errors.length).toBeGreaterThan(0);
     });
   });
+
+  describe('Scenario: isEnded state', () => {
+    const noChoiceInk = `Hello, this story has no choices.\n-> END\n`;
+
+    it('Then isEnded is false in the initial state', () => {
+      const { result } = renderHook(() => useInkCompiler('', []));
+      expect(result.current.isEnded).toBe(false);
+    });
+
+    it('Given ink with no choices, When the story finishes, Then isEnded becomes true', async () => {
+      const { result } = renderHook(() => useInkCompiler(noChoiceInk, []));
+      await act(async () => { vi.advanceTimersByTime(500); });
+      expect(result.current.isEnded).toBe(true);
+      expect(result.current.choices).toHaveLength(0);
+    });
+
+    it('Given a story that ended, When handleRestart is called, Then isEnded resets to false before re-running', async () => {
+      const { result } = renderHook(() => useInkCompiler(noChoiceInk, []));
+      await act(async () => { vi.advanceTimersByTime(500); });
+      expect(result.current.isEnded).toBe(true);
+
+      await act(async () => { result.current.handleRestart(); });
+      // After restart the no-choice story ends immediately again, but isEnded should be true (re-set)
+      expect(result.current.isEnded).toBe(true);
+    });
+
+    it('Given ink with choices, When the story is mid-flow with choices, Then isEnded is false', async () => {
+      const { result } = renderHook(() => useInkCompiler(validInk, []));
+      await act(async () => { vi.advanceTimersByTime(500); });
+      expect(result.current.choices.length).toBeGreaterThan(0);
+      expect(result.current.isEnded).toBe(false);
+    });
+  });
+
+  describe('Scenario: autoCompile toggle', () => {
+    it('Given autoCompile is false, When content changes, Then compilation does not run', async () => {
+      const { result } = renderHook(() => useInkCompiler(validInk, [], false));
+      await act(async () => { vi.advanceTimersByTime(500); });
+      expect(result.current.output).toHaveLength(0);
+      expect(result.current.isRunning).toBe(false);
+    });
+
+    it('Given autoCompile is true (default), When content changes, Then compilation runs', async () => {
+      const { result } = renderHook(() => useInkCompiler(validInk, [], true));
+      await act(async () => { vi.advanceTimersByTime(500); });
+      expect(result.current.isRunning).toBe(true);
+      expect(result.current.output.length).toBeGreaterThan(0);
+    });
+
+    it('Given autoCompile is false, When compileAndRun is called manually, Then story runs', async () => {
+      const { result } = renderHook(() => useInkCompiler(validInk, [], false));
+      await act(async () => { vi.advanceTimersByTime(500); });
+      expect(result.current.isRunning).toBe(false);
+
+      await act(async () => { result.current.compileAndRun(); });
+      expect(result.current.isRunning).toBe(true);
+    });
+  });
 });

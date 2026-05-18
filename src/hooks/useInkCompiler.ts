@@ -10,6 +10,7 @@ export interface UseInkCompilerReturn {
   choices: Choice[];
   errors: string[];
   isRunning: boolean;
+  isEnded: boolean;
   stats: StoryStats;
   variables: Record<string, unknown>;
   compileAndRun: () => void;
@@ -21,12 +22,14 @@ export interface UseInkCompilerReturn {
 
 export function useInkCompiler(
   content: string,
-  includeErrors: string[]
+  includeErrors: string[],
+  autoCompile: boolean = true
 ): UseInkCompilerReturn {
   const [output, setOutput] = useState<string[]>([]);
   const [choices, setChoices] = useState<Choice[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [isEnded, setIsEnded] = useState(false);
   const [stats, setStats] = useState<StoryStats>({ wordCount: 0, knots: [], stitches: [], variables: [] });
   const [variables, setVariables] = useState<Record<string, unknown>>({});
   const storyRef = useRef<Story | null>(null);
@@ -43,6 +46,7 @@ export function useInkCompiler(
       }
 
       setOutput(newOutput);
+      setIsEnded(!story.canContinue && story.currentChoices.length === 0);
 
       if (story.currentChoices.length > 0) {
         const currentChoices = story.currentChoices.map((choice: { index: number; text: string }) => ({
@@ -88,6 +92,7 @@ export function useInkCompiler(
 
   const compileAndRun = useCallback(() => {
     setErrors([]);
+    setIsEnded(false);
 
     if (includeErrors.length > 0) {
       setErrors(includeErrors);
@@ -104,7 +109,7 @@ export function useInkCompiler(
       } catch (compileError) {
         const errorMessages = extractCompilerErrors(compilerObj, compileError);
 
-        if (errorMessages[0] === 'Compilation failed. Check your Ink syntax.') {
+        if (errorMessages[0] === 'Compilation failed. Check your ink syntax.') {
           console.error('Compiler object:', compilerObj);
           console.error('Compile error:', compileError);
         }
@@ -137,14 +142,29 @@ export function useInkCompiler(
     }
   }, [content, includeErrors, continueStory]);
 
-  // Auto-compile when content changes
+  // Keep a ref to the latest compileAndRun so the auto-compile effect can call it
+  // without needing to list it as a dependency (which would cause it to fire on
+  // every render whenever includeErrors produces a new array reference).
+  const compileAndRunRef = useRef(compileAndRun);
   useEffect(() => {
+    compileAndRunRef.current = compileAndRun;
+  }, [compileAndRun]);
+
+  // Serialize includeErrors to a stable string so the effect only re-fires when
+  // the actual error messages change, not when a new (but equal) array is passed.
+  const includeErrorsKey = includeErrors.join('\n');
+
+  // Auto-compile when content or include errors change — does NOT depend on
+  // compileAndRun itself, so choices / internal state updates don't trigger a restart.
+  useEffect(() => {
+    if (!autoCompile) return;
     const timer = setTimeout(() => {
-      compileAndRun();
+      compileAndRunRef.current();
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [content, compileAndRun]);
+   
+  }, [content, includeErrorsKey, autoCompile]);
 
   const handleChoice = useCallback((index: number) => {
     if (storyRef.current) {
@@ -183,6 +203,7 @@ export function useInkCompiler(
     choices,
     errors,
     isRunning,
+    isEnded,
     stats,
     variables,
     compileAndRun,
