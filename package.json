@@ -17,12 +17,12 @@
     "all": "npm run lint && npm run test:coverage && npm run test:e2e && npm run build && npm run docs:build"
   },
   "dependencies": {
-    "@codemirror/lang-markdown": "^6.5.0",
-    "@mavnn/codemirror-lang-ink": "^0.9.27",
-    "@uiw/react-codemirror": "^4.25.10",
+    "@codemirror/lang-markdown": "^6.5.1",
+    "@mavnn/codemirror-lang-ink": "^0.10.1",
+    "@uiw/react-codemirror": "^4.25.11",
     "inkjs": "^2.4.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
