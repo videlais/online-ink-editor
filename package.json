@@ -27,7 +27,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
-    "@testing-library/jest-dom": "^6.10.0",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.3",
     "@types/node": "^26.1.2",
@@ -42,8 +42,8 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.9.0",
     "happy-dom": "^20.11.1",
-    "jsdom": "^29.1.1",
-    "typescript": "~6.0.3",
+    "jsdom": "^30.0.1",
+    "typescript": "~7.0.2",
     "typescript-eslint": "^8.66.0",
     "vite": "npm:rolldown-vite@7.3.1",
     "vitest": "^4.1.10"
