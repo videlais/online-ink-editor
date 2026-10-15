@@ -1,5 +1,6 @@
 # coverage
 coverage/*
+.vitest/
 
 # Logs
 logs
