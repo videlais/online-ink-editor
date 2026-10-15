@@ -12,6 +12,28 @@ See LICENSE file for details.
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+### Testing
+
+Use Node.js 24 or 26, matching the CI matrix. Vitest 5 supports Node.js
+`^22.12.0 || ^24.0.0 || >=26.0.0`; Node.js 25 is not supported.
+
+```sh
+npm ci
+npm run test:coverage
+npm run test:e2e
+npm run build
+```
+
+Install Chromium with `npx playwright install chromium` before the first E2E run.
+For the interactive test runner, use `npm run test:ui` and open the authenticated
+URL printed by Vitest. In Vitest 5, opening `/__vitest__/` without authenticating
+first is not sufficient.
+
+Keep `vitest`, `@vitest/coverage-v8`, and `@vitest/ui` at the same resolved version:
+the companion packages require an exact matching Vitest peer version. Update all
+three together and commit the regenerated lockfile. Dependabot groups these
+packages into a single update.
+
 ## Acknowledgments
 
 - [ink](https://www.inklestudios.com/ink/) - The narrative scripting language.
