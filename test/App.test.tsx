@@ -147,7 +147,7 @@ describe('Feature: Ink Editor Application', () => {
       await user.click(zoomInButton);
       
       const mainContent = document.querySelector('.main-content');
-      expect(mainContent).toHaveStyle({ fontSize: '110%' });
+      expect(mainContent?.style.fontSize).toBe('110%');
     });
 
     it('Given the app is open, When the user zooms out, Then the font size should decrease', async () => {
@@ -166,7 +166,7 @@ describe('Feature: Ink Editor Application', () => {
       await user.click(zoomOutButton);
       
       const mainContent = document.querySelector('.main-content');
-      expect(mainContent).toHaveStyle({ fontSize: '100%' });
+      expect(mainContent?.style.fontSize).toBe('100%');
     });
   });
 
@@ -484,7 +484,7 @@ describe('Feature: Ink Editor Application', () => {
       fireEvent.keyDown(document, { key: '=', ctrlKey: true });
 
       const mainContent = document.querySelector('.main-content');
-      expect(mainContent).toHaveStyle({ fontSize: '110%' });
+      expect(mainContent?.style.fontSize).toBe('110%');
     });
 
     it('Given the app is open, When Ctrl+- is pressed, Then zoom should not go below 100%', () => {
@@ -493,7 +493,7 @@ describe('Feature: Ink Editor Application', () => {
       fireEvent.keyDown(document, { key: '-', ctrlKey: true });
 
       const mainContent = document.querySelector('.main-content');
-      expect(mainContent).toHaveStyle({ fontSize: '100%' });
+      expect(mainContent?.style.fontSize).toBe('100%');
     });
 
     it('Given the app is open, When Ctrl+E is pressed, Then it should trigger export', () => {
@@ -629,7 +629,7 @@ describe('Feature: Ink Editor Application', () => {
       }
 
       const mainContent = document.querySelector('.main-content');
-      expect(mainContent).toHaveStyle({ fontSize: '200%' });
+      expect(mainContent?.style.fontSize).toBe('200%');
     });
   });
 

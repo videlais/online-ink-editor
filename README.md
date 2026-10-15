@@ -14,8 +14,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ### Testing
 
-Use Node.js 24 or 26, matching the CI matrix. Vitest 5 supports Node.js
-`^22.12.0 || ^24.0.0 || >=26.0.0`; Node.js 25 is not supported.
+Use Node.js 24.15+ or 26+, matching the CI matrix. JSDOM 30 supports Node.js
+`^22.22.2 || ^24.15.0 || >=26.0.0`; Vitest 5 supports
+`^22.12.0 || ^24.0.0 || >=26.0.0`. Node.js 25 is not supported.
 
 ```sh
 npm ci
