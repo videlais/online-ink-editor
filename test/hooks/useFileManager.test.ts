@@ -41,6 +41,8 @@ describe('useFileManager', () => {
       localStorageMock.setItem('inkEditor_content', saved);
       const { result } = renderHook(() => useFileManager());
       expect(result.current.files[0].name).toBe('restored.ink');
+      expect(result.current.activeFileId).toBe('42');
+      expect(result.current.mainFileId).toBe('42');
     });
 
     it('Given corrupt JSON in localStorage, Then it falls back to the default file', () => {
@@ -146,6 +148,18 @@ describe('useFileManager', () => {
       act(() => result.current.handleTabClose(secondId));
       expect(result.current.activeFileId).toBe('1');
       expect(result.current.files).toHaveLength(1);
+    });
+
+    it('Given the main file is closed, Then another remaining file becomes the main file', () => {
+      const { result } = renderHook(() => useFileManager());
+      act(() => result.current.handleNewFile());
+      const secondId = result.current.files[1].id;
+      act(() => result.current.handleSetMainFile(secondId));
+
+      act(() => result.current.handleTabClose(secondId));
+
+      expect(result.current.files.map(file => file.id)).toEqual(['1']);
+      expect(result.current.mainFileId).toBe('1');
     });
   });
 
