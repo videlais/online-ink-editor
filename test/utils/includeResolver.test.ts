@@ -27,6 +27,30 @@ describe('Feature: INCLUDE Resolution', () => {
       expect(result.errors).toEqual([]);
     });
 
+    it('Given the same file is included more than once, When resolving, Then it should merge it each time', () => {
+      const files: InkFile[] = [
+        { id: '1', name: 'main.ink', content: 'INCLUDE shared.ink\nINCLUDE shared.ink' },
+        { id: '2', name: 'shared.ink', content: 'Shared passage' },
+      ];
+
+      const result = resolveIncludes(files, '1');
+
+      expect(result.content).toBe('Shared passage\nShared passage');
+      expect(result.errors).toEqual([]);
+    });
+
+    it('Given an empty included file, When resolving, Then it should not report it missing', () => {
+      const files: InkFile[] = [
+        { id: '1', name: 'main.ink', content: 'Before\nINCLUDE empty.ink\nAfter' },
+        { id: '2', name: 'empty.ink', content: '' },
+      ];
+
+      const result = resolveIncludes(files, '1');
+
+      expect(result.content).toBe('Before\n\nAfter');
+      expect(result.errors).toEqual([]);
+    });
+
     it('Given nested INCLUDE statements, When resolving, Then it should recursively merge', () => {
       const files: InkFile[] = [
         { id: '1', name: 'main.ink', content: 'INCLUDE chapter1.ink\n-> END' },

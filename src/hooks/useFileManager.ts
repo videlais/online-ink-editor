@@ -60,8 +60,8 @@ export interface UseFileManagerReturn {
 
 export function useFileManager(): UseFileManagerReturn {
   const [files, setFiles] = useState<InkFile[]>(loadInitialFiles);
-  const [activeFileId, setActiveFileId] = useState<string>('1');
-  const [mainFileId, setMainFileId] = useState<string>('1');
+  const [activeFileId, setActiveFileId] = useState<string>(() => files[0]?.id ?? '1');
+  const [mainFileId, setMainFileId] = useState<string>(() => files[0]?.id ?? '1');
 
   // Save files to localStorage whenever they change
   useEffect(() => {
@@ -154,14 +154,20 @@ export function useFileManager(): UseFileManagerReturn {
     setFiles(prev => {
       if (prev.length === 1) return prev; // Don't close last file
       const fileIndex = prev.findIndex(f => f.id === fileId);
+      if (fileIndex === -1) return prev;
+
       const newFiles = prev.filter(f => f.id !== fileId);
       if (fileId === activeFileId) {
         const newIndex = fileIndex > 0 ? fileIndex - 1 : 0;
         setActiveFileId(newFiles[newIndex].id);
       }
+      if (fileId === mainFileId) {
+        setMainFileId(newFiles[0].id);
+      }
+
       return newFiles;
     });
-  }, [activeFileId]);
+  }, [activeFileId, mainFileId]);
 
   const handleRenameFile = useCallback((fileId: string, newName: string) => {
     const name = newName.endsWith('.ink') ? newName : `${newName}.ink`;
